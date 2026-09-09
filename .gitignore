@@ -1,0 +1,14 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.idea/
+**/.vscode/
+**/node_modules/
+**/.next/
+**/coverage/
+.env
+*.user
+*.suo
+*.log
+.DS_Store
+
