@@ -1,0 +1,17 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.idea/
+**/.vscode/
+**/node_modules/
+**/.next/
+**/coverage/
+.env
+.env.local
+.env.*.local
+*.tsbuildinfo
+*.user
+*.suo
+*.log
+.DS_Store
+
