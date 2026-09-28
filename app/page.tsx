@@ -3,6 +3,13 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 export default function Home() {
   return (
     <main>
+<<<<<<< HEAD
+=======
+      <nav>
+        <strong>TixFlow</strong>
+        <span>Event ticketing platform</span>
+      </nav>
+>>>>>>> origin/dev
       <section className="hero">
         <p className="eyebrow">HIGH-TRAFFIC BOOKING</p>
         <h1>Luồng vé trôi nhanh.<br />Giữ chỗ vẫn chính xác.</h1>
