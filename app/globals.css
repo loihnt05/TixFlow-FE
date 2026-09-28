@@ -25,7 +25,6 @@ article h2 { margin: 26px 0 8px; font-size: 22px; }
 article p { margin: 0; color: #9aa6af; line-height: 1.55; }
 @media (max-width: 720px) { main { padding: 0 20px 40px; } .hero { padding-top: 64px; } .modules { grid-template-columns: 1fr; } .actions { flex-direction: column; align-items: flex-start; } }
 
-<<<<<<< HEAD
 .site-header { max-width: 1180px; margin: 0 auto; padding: 0 32px; }
 .brand { font-size: 28px; font-weight: 800; letter-spacing: -1.5px; color: #65f4c2; text-decoration: none; }
 .nav-links { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
@@ -48,5 +47,3 @@ dd { margin: 0; overflow-wrap: anywhere; }
   dd { margin-bottom: 12px; }
 }
 
-=======
->>>>>>> origin/dev

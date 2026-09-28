@@ -15,7 +15,6 @@ npm run dev
 ```
 
 Truy cập `http://localhost:3000`.
-<<<<<<< HEAD
 
 ## Khởi tạo Git repository
 
@@ -26,5 +25,3 @@ git commit -m "Initial TixFlow frontend"
 ```
 
 Sau đó thêm remote của repository `tixflow-frontend` và push nhánh `main`.
-=======
->>>>>>> origin/dev
