@@ -1,6 +1,8 @@
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+import { apiBaseUrl } from "@/lib/public-config";
 
 export default function Home() {
+  const apiUrl = apiBaseUrl();
+
   return (
     <main>
       <section className="hero">
@@ -10,10 +12,12 @@ export default function Home() {
           Bộ khung khóa luận cho hệ thống nhiều sự kiện, tập trung vào concurrency,
           chống oversell và khả năng mở rộng khi flash sale.
         </p>
-        <div className="actions">
-          <a href={`${apiUrl}/api/v1/events`}>Kiểm tra Events API</a>
-          <a className="secondary" href={`${apiUrl}/health`}>Health check</a>
-        </div>
+        {apiUrl ? (
+          <div className="actions">
+            <a href={`${apiUrl}/api/v1/events`}>Kiểm tra Events API</a>
+            <a className="secondary" href={`${apiUrl}/health`}>Health check</a>
+          </div>
+        ) : <p className="notice error">Chưa cấu hình địa chỉ API. Tạo `.env.local` theo README rồi khởi động lại ứng dụng.</p>}
       </section>
       <section className="modules">
         <article><b>01</b><h2>Booking Core</h2><p>Hold, expire, confirm và idempotency.</p></article>

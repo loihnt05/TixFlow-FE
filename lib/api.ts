@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { type AuthContextProps, useAuth } from "react-oidc-context";
 import type { User } from "oidc-client-ts";
+import { apiBaseUrl } from "@/lib/public-config";
 
 // Refresh before a request rather than risking expiry while it is in flight.
 const minimumTokenLifetimeSeconds = 60;
@@ -44,11 +45,11 @@ export function useApi() {
   }, [auth]);
 
   return useCallback(async <T,>(path: string, signal?: AbortSignal): Promise<T> => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const apiUrl = apiBaseUrl();
     if (!apiUrl) throw new Error("Chưa cấu hình địa chỉ API.");
     if (!path.startsWith("/api/v1/")) throw new Error("Đường dẫn API không hợp lệ.");
 
-    const request = (token: string) => fetch(`${apiUrl.replace(/\/$/, "")}${path}`, {
+    const request = (token: string) => fetch(`${apiUrl}${path}`, {
       headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
       credentials: "omit", cache: "no-store", redirect: "error", signal
     });
