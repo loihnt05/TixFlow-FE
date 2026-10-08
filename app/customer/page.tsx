@@ -1,2 +1,2 @@
-import { RolePage } from "@/components/role-page";
-export default function CustomerPage() { return <RolePage role="Customer" />; }
+import { redirect } from "next/navigation";
+export default function CustomerPage() { redirect("/account"); }

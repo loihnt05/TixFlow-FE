@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AppAuthProvider } from "@/components/auth-provider";
-import { SiteHeader } from "@/components/auth-controls";
+import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
 
 export const metadata: Metadata = {
-  title: "TixFlow",
-  description: "Đặt vé sự kiện nhanh, minh bạch và an toàn"
+  title: "Zipevent — Inspiration Everywhere",
+  description: "Discover events, experiences, and inspiration everywhere."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi">
-      <body><AppAuthProvider><SiteHeader />{children}</AppAuthProvider></body>
+      <body><Header />{children}<Footer /></body>
     </html>
   );
 }
-
