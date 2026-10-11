@@ -1,61 +1,166 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { AuthProvider } from "react-oidc-context";
-import { InMemoryWebStorage, UserManager, WebStorageStateStore } from "oidc-client-ts";
-import { safeReturnTo } from "@/lib/auth";
+import Keycloak, { type KeycloakTokenParsed } from "keycloak-js";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { rolesOf, safeReturnTo, type Role } from "@/lib/auth";
+import { keycloakPublicConfig } from "@/lib/public-config";
+
+const returnToKey = "tixflow.auth.returnTo";
+const defaultReturnTo = "/account";
+
+interface AuthSnapshot {
+  ready: boolean;
+  authenticated: boolean;
+  tokenParsed?: KeycloakTokenParsed;
+  error?: string;
+}
+
+interface KeycloakAuthContextValue extends AuthSnapshot {
+  roles: Role[];
+  login(returnTo?: string): Promise<void>;
+  register(returnTo?: string): Promise<void>;
+  logout(): Promise<void>;
+  getAccessToken(forceRefresh?: boolean): Promise<string>;
+}
+
+const KeycloakAuthContext = createContext<KeycloakAuthContextValue | undefined>(undefined);
+
+let keycloak: Keycloak | undefined;
+let initialization: Promise<boolean> | undefined;
+let renewal: Promise<boolean> | undefined;
+
+function currentLocation(): string {
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+}
+
+function rememberReturnTo(value: string): void {
+  window.sessionStorage.setItem(returnToKey, safeReturnTo(value));
+}
+
+function consumeReturnTo(): string {
+  const value = safeReturnTo(window.sessionStorage.getItem(returnToKey), defaultReturnTo);
+  window.sessionStorage.removeItem(returnToKey);
+  return value;
+}
 
 export function AppAuthProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const router = useRouter();
-  const [manager, setManager] = useState<UserManager>();
-  const [error, setError] = useState<string>();
+  const [snapshot, setSnapshot] = useState<AuthSnapshot>({ ready: false, authenticated: false });
 
-  useEffect(() => {
-    try {
-      const authority = process.env.NEXT_PUBLIC_OIDC_AUTHORITY;
-      const clientId = process.env.NEXT_PUBLIC_OIDC_CLIENT_ID;
-      const redirectUri = process.env.NEXT_PUBLIC_OIDC_REDIRECT_URI;
-      const logoutUri = process.env.NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI;
-      if (!authority || !clientId || !redirectUri || !logoutUri) {
-        throw new Error("Thiếu cấu hình đăng nhập. Tạo .env.local theo README và khởi động lại ứng dụng.");
-      }
-      const userManager = new UserManager({
-        authority,
-        client_id: clientId,
-        redirect_uri: redirectUri,
-        post_logout_redirect_uri: logoutUri,
-        response_type: "code",
-        scope: "openid profile email",
-        // oidc-client-ts uses S256 PKCE by default; never disable it.
-        disablePKCE: false,
-        userStore: new WebStorageStateStore({ store: new InMemoryWebStorage() }),
-        // Only short-lived request state/nonce/PKCE verifier survive the hosted login redirect.
-        // Access, refresh and ID tokens remain exclusively in userStore (memory).
-        stateStore: new WebStorageStateStore({ store: window.sessionStorage }),
-        automaticSilentRenew: true,
-        monitorSession: false,
-        loadUserInfo: false
-      });
-      setManager(userManager);
-      return () => userManager.stopSilentRenew();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Không thể khởi tạo đăng nhập.");
-    }
+  const syncSnapshot = useCallback((error?: string) => {
+    setSnapshot({
+      ready: true,
+      authenticated: keycloak?.authenticated === true,
+      tokenParsed: keycloak?.tokenParsed,
+      error,
+    });
   }, []);
 
-  if (error) return <main><p role="alert" className="notice error">{error}</p></main>;
-  if (!manager) return <main><p role="status" className="notice">Đang tải TixFlow…</p></main>;
+  useEffect(() => {
+    let disposed = false;
+    try {
+      const config = keycloakPublicConfig();
+      keycloak ??= new Keycloak({ url: config.url, realm: config.realm, clientId: config.clientId });
 
-  return (
-    <AuthProvider userManager={manager} onSigninCallback={user => {
-      const state = user?.state as { returnTo?: unknown } | undefined;
-      // Remove the authorization code/state from the address bar after validation.
-      const destination = safeReturnTo(state?.returnTo);
-      window.history.replaceState({}, document.title, destination);
-      router.replace(destination);
-    }}>
-      {children}
-    </AuthProvider>
-  );
+      const update = () => { if (!disposed) syncSnapshot(); };
+      keycloak.onAuthSuccess = update;
+      keycloak.onAuthRefreshSuccess = update;
+      keycloak.onAuthLogout = update;
+      keycloak.onAuthError = () => { if (!disposed) syncSnapshot("Không thể hoàn tất đăng nhập."); };
+      keycloak.onAuthRefreshError = () => {
+        keycloak?.clearToken();
+        if (!disposed) syncSnapshot("Phiên đăng nhập đã hết hạn.");
+      };
+      keycloak.onTokenExpired = () => {
+        if (!keycloak?.authenticated) return;
+        renewal ??= keycloak.updateToken(30).finally(() => { renewal = undefined; });
+        void renewal.then(() => {
+          if (!disposed) syncSnapshot();
+        }).catch(() => {
+          keycloak?.clearToken();
+          if (!disposed) syncSnapshot("Phiên đăng nhập đã hết hạn.");
+        });
+      };
+
+      if (pathname !== "/auth/callback") rememberReturnTo(currentLocation());
+      initialization ??= keycloak.init({
+        onLoad: "check-sso",
+        flow: "standard",
+        pkceMethod: "S256",
+        responseMode: "fragment",
+        redirectUri: config.redirectUri,
+        checkLoginIframe: false,
+        scope: "openid profile email",
+      });
+
+      void initialization.then(() => {
+        if (disposed) return;
+        syncSnapshot();
+        if (window.location.pathname === "/auth/callback") router.replace(consumeReturnTo());
+      }).catch(() => {
+        if (!disposed) syncSnapshot("Không thể kết nối tới dịch vụ đăng nhập.");
+      });
+    } catch (cause) {
+      if (!disposed) {
+        setSnapshot({
+          ready: true,
+          authenticated: false,
+          error: cause instanceof Error ? cause.message : "Không thể khởi tạo đăng nhập.",
+        });
+      }
+    }
+    return () => { disposed = true; };
+  }, [pathname, router, syncSnapshot]);
+
+  const login = useCallback(async (returnTo = defaultReturnTo) => {
+    const config = keycloakPublicConfig();
+    rememberReturnTo(returnTo);
+    await keycloak?.login({ redirectUri: config.redirectUri });
+  }, []);
+
+  const register = useCallback(async (returnTo = defaultReturnTo) => {
+    const config = keycloakPublicConfig();
+    rememberReturnTo(returnTo);
+    await keycloak?.register({ redirectUri: config.redirectUri });
+  }, []);
+
+  const logout = useCallback(async () => {
+    const config = keycloakPublicConfig();
+    await keycloak?.logout({ redirectUri: config.postLogoutRedirectUri });
+  }, []);
+
+  const getAccessToken = useCallback(async (forceRefresh = false) => {
+    if (!keycloak?.authenticated || !keycloak.token) throw new Error("AUTHENTICATION_REQUIRED");
+    renewal ??= keycloak.updateToken(forceRefresh ? -1 : 30).finally(() => { renewal = undefined; });
+    await renewal;
+    if (!keycloak.authenticated || !keycloak.token) throw new Error("AUTHENTICATION_REQUIRED");
+    return keycloak.token;
+  }, []);
+
+  const value = useMemo<KeycloakAuthContextValue>(() => ({
+    ...snapshot,
+    roles: rolesOf(snapshot.tokenParsed),
+    login,
+    register,
+    logout,
+    getAccessToken,
+  }), [getAccessToken, login, logout, register, snapshot]);
+
+  if (!snapshot.ready) return <main><p role="status" className="notice">Đang kiểm tra phiên đăng nhập…</p></main>;
+  return <KeycloakAuthContext.Provider value={value}>{children}</KeycloakAuthContext.Provider>;
+}
+
+export function useKeycloakAuth(): KeycloakAuthContextValue {
+  const context = useContext(KeycloakAuthContext);
+  if (!context) throw new Error("useKeycloakAuth must be used inside AppAuthProvider.");
+  return context;
 }

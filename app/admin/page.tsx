@@ -1,2 +1,5 @@
-import { redirect } from "next/navigation";
-export default function AdminPage() { redirect("/organizer"); }
+import { RolePage } from "@/components/role-page";
+
+export default function AdminPage() {
+  return <RolePage role="Admin" />;
+}

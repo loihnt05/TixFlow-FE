@@ -1,6 +1,6 @@
-# Zipevent UI Prototype
+# TixFlow frontend
 
-A responsive, frontend-only event discovery and ticketing prototype inspired by [Zipevent](https://www.zipeventapp.com/). The app uses fictional event content, in-memory mock datasets, and browser storage for prototype interactions. It does not connect to a backend or payment provider.
+A Next.js frontend for event discovery and ticketing. Authentication uses Keycloak through `keycloak-js`; `/account` calls the TixFlow API and displays the local profile synchronized from the access-token `sub`. Event, checkout and organizer screens still use mock data until their backend modules are implemented.
 
 ## Requirements
 
@@ -11,19 +11,26 @@ A responsive, frontend-only event discovery and ticketing prototype inspired by 
 
 ```powershell
 pnpm install
+Copy-Item .env.example .env.local
 pnpm dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3000`. Start Keycloak and the API from `tixflow-backend` first.
+
+The browser client uses Authorization Code with PKCE S256. `keycloak-js` keeps access, ID and refresh tokens in memory; only the post-login return path is kept temporarily in `sessionStorage`. Never put a Keycloak client secret in `NEXT_PUBLIC_*` variables.
 
 ## Main routes
 
 - `/` — discovery homepage
 - `/events` and `/events/[slug]` — event search, filters, and details
 - `/checkout` and `/checkout/success` — mock ticket order flow
-- `/login`, `/register`, `/forgot-password` — mock account flows
-- `/account` — profile, tickets, orders, favorites, and settings
-- `/organizer` — dashboard, events, event setup, orders, attendees, and analytics
+- `/login`, `/register`, `/auth/callback` — Keycloak login and registration flow
+- `/account` — authenticated profile from `GET /api/v1/users/me`; transaction sections require Customer
+- `/admin` — Admin-only access probe and dashboard entry
+- `/forgot-password` — prototype screen; Keycloak reset-password integration remains pending
+- `/organizer` — Organizer-only dashboard, events, event setup, orders, attendees, and analytics
+
+The header and footer show links for the single business role in the token. Customer-only purchase routes, Organizer routes and the Admin route are also guarded by `ProtectedRoute`; navigation visibility is not used as the authorization boundary.
 
 Mock datasets live in `lib/mock/`. UI-facing mock service functions live in `lib/mock-api/` so they can later be replaced with API calls without coupling pages to fixture data.
 

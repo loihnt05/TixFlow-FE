@@ -2,40 +2,37 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "react-oidc-context";
-import { rolesOf } from "@/lib/auth";
+import { useKeycloakAuth } from "@/components/auth-provider";
 
 export function SignInButton({ returnTo }: { returnTo?: string }) {
-  const auth = useAuth();
+  const auth = useKeycloakAuth();
   const pathname = usePathname();
-  return <button type="button" disabled={auth.isLoading || !!auth.activeNavigator}
-    onClick={() => void auth.signinRedirect({ state: { returnTo: returnTo ?? pathname } })}>
+  return <button type="button" disabled={!auth.ready}
+    onClick={() => void auth.login(returnTo ?? pathname)}>
     Đăng nhập / Đăng ký
   </button>;
 }
 
 export function AuthError() {
-  const auth = useAuth();
+  const auth = useKeycloakAuth();
   if (!auth.error) return null;
   return <div role="alert" className="notice error">
-    <p>Không thể hoàn tất đăng nhập: {auth.error.message}</p>
+    <p>{auth.error}</p>
     <SignInButton returnTo="/account" />
   </div>;
 }
 
 export function SiteHeader() {
-  const auth = useAuth();
-  const roles = rolesOf(auth.user);
+  const auth = useKeycloakAuth();
+  const displayName = String(auth.tokenParsed?.name ?? auth.tokenParsed?.preferred_username ?? "Tài khoản");
   return <header className="site-header">
     <nav aria-label="Điều hướng chính">
       <Link href="/" className="brand">TixFlow</Link>
       <div className="nav-links">
-        {auth.isLoading || auth.activeNavigator ? <span role="status">Đang xác thực…</span> :
-          auth.isAuthenticated ? <>
-            <Link href="/account">{auth.user?.profile.name ?? auth.user?.profile.email ?? "Tài khoản"}</Link>
-            {roles.map(role => <Link key={role} href={`/${role.toLowerCase()}`}>{role}</Link>)}
-            <button type="button" className="secondary" onClick={() => void auth.signoutRedirect()}>Đăng xuất</button>
-          </> : <SignInButton returnTo="/account" />}
+        {auth.authenticated ? <>
+          <Link href="/account">{displayName}</Link>
+          <button type="button" className="secondary" onClick={() => void auth.logout()}>Đăng xuất</button>
+        </> : <SignInButton returnTo="/account" />}
       </div>
     </nav>
     <AuthError />

@@ -1,2 +1,2 @@
-import { AuthForm } from "@/components/auth/auth-form";
-export default function RegisterPage() { return <AuthForm mode="register" />; }
+import { KeycloakEntry } from "@/components/auth/keycloak-entry";
+export default function RegisterPage() { return <KeycloakEntry mode="register" />; }

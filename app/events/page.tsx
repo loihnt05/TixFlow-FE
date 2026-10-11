@@ -1,7 +1,25 @@
 import { EventDiscovery } from "@/components/events/event-discovery";
 import { getEvents } from "@/lib/mock-api/events";
 
-export default async function EventsPage({ searchParams }: PageProps<"/events">) {
+interface EventsPageProps {
+  searchParams: Promise<{
+    q?: string;
+    category?: string;
+    city?: string;
+    sort?: string;
+  }>;
+}
+
+export default async function EventsPage({ searchParams }: EventsPageProps) {
   const [params, result] = await Promise.all([searchParams, getEvents({ limit: 100 })]);
-  return <main className="page-shell"><EventDiscovery events={result.events} initialQuery={typeof params.q === "string" ? params.q : ""} initialCategory={typeof params.category === "string" ? params.category : ""} /></main>;
+
+  return (
+    <main>
+      <EventDiscovery
+        events={result.events}
+        initialQuery={params?.q || ""}
+        initialCategory={params?.category || ""}
+      />
+    </main>
+  );
 }

@@ -1,60 +1,139 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, PlusCircle, CheckCircle, ShieldCheck, BarChart3 } from "lucide-react";
+import { FloatingSearch } from "@/components/home/floating-search";
+import { HeroCarousel } from "@/components/home/hero-carousel";
+import { TrendingCarousel } from "@/components/home/trending-carousel";
+import { PartnerSection } from "@/components/home/partner-section";
+import { CategoriesSection } from "@/components/home/categories-section";
+import { BlogSection } from "@/components/home/blog-section";
 import { EventGrid } from "@/components/events/event-grid";
-import { eventCategories } from "@/lib/mock/events";
-import { getFeaturedEvents, getPopularEvents } from "@/lib/mock-api/events";
+import { getFeaturedEvents, getPopularEvents, getEvents } from "@/lib/mock-api/events";
 
 export default async function HomePage() {
-  const [featuredEvents, popularEvents] = await Promise.all([getFeaturedEvents(), getPopularEvents()]);
-  const categories = eventCategories;
+  const [featuredEvents, popularEvents, allEventsResponse] = await Promise.all([
+    getFeaturedEvents(),
+    getPopularEvents(),
+    getEvents({ limit: 10 }),
+  ]);
+
+  const ticketEvents = allEventsResponse.events;
+
   return (
-    <main className="page-shell">
-      <section className="container pt-7 sm:pt-9">
-        <div className="relative overflow-hidden rounded-[24px] bg-[#fff1e9] px-6 py-8 sm:px-10 sm:py-10 lg:px-14">
-          <div className="relative z-10 max-w-[570px]">
-            <p className="eyebrow mb-3 flex items-center gap-2"><Sparkles size={14} /> Inspiration everywhere</p>
-            <h1 className="max-w-[520px] text-balance text-[32px] font-extrabold leading-[1.08] tracking-[-.05em] text-[#272a31] sm:text-[44px]">Find your next <span className="text-[#ed7046]">great experience.</span></h1>
-            <p className="mt-3 max-w-[430px] text-sm leading-6 text-[#747782] sm:text-[15px]">Discover concerts, ideas, communities, and moments worth making time for.</p>
-            <Link href="/events" className="button-primary mt-6">Explore all events <ArrowRight size={16} /></Link>
+    <main className="min-h-screen bg-[#FDFCFD] pb-16">
+      {/* 1. Floating Global Search Bar (Zipevent Signature Sticky/Hero Search) */}
+      <FloatingSearch />
+
+      {/* 2. Hero Featured Carousel (Zipevent Signature 3D Multi-Slide Carousel) */}
+      <HeroCarousel events={featuredEvents} />
+
+      {/* 3. Trending Carousel with .bg-trending signature gradient and rank numbers */}
+      <TrendingCarousel events={popularEvents} />
+
+      {/* 4. Partner Organizers Section */}
+      <PartnerSection />
+
+      {/* 5. Register & Tickets (All / Ticketed Events) */}
+      <section className="container py-10 sm:py-14">
+        <div className="mb-6 flex items-end justify-between sm:mb-8">
+          <div>
+            <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#ef5360]">
+              <Sparkles size={14} />
+              <span>แนะนำสำหรับคุณ</span>
+            </div>
+            <h2 className="text-xl font-bold tracking-tight text-[#2B212B] sm:text-2xl md:text-[26px]">
+              ลงทะเบียนและซื้อบัตร
+            </h2>
+            <p className="mt-1 text-xs text-[#8E8E8E] sm:text-sm">
+              จองบัตรล่วงหน้าสำหรับอีเวนต์คุณภาพที่คุณไม่อยากพลาด
+            </p>
           </div>
-          <div className="pointer-events-none absolute -right-8 -top-20 hidden h-[360px] w-[460px] rotate-[-8deg] rounded-[42px] bg-[#ffd9c8] lg:block" />
-          <div className="pointer-events-none absolute right-16 top-9 hidden h-[250px] w-[320px] overflow-hidden rounded-[26px] border-[8px] border-white shadow-xl lg:block">
-            <img className="h-full w-full object-cover" src="https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&w=900&q=85" alt="People enjoying a live event" />
+          <Link
+            href="/events"
+            className="group flex items-center gap-1.5 text-xs font-semibold text-[#ef5360] transition-colors hover:text-[#ec3746] sm:text-sm"
+          >
+            <span>ดูทั้งหมด</span>
+            <ArrowRight
+              size={16}
+              className="transition-transform duration-200 group-hover:translate-x-1"
+            />
+          </Link>
+        </div>
+
+        {/* 5-Column Responsive Event Grid */}
+        <EventGrid events={ticketEvents} />
+
+        {/* View More Center Button */}
+        <div className="mt-10 flex justify-center sm:mt-12">
+          <Link
+            href="/events"
+            className="inline-flex items-center gap-2 rounded-full border-2 border-[#ef5360] bg-white px-8 py-2.5 text-xs font-bold text-[#ef5360] shadow-xs transition-all duration-200 hover:bg-[#ef5360] hover:text-white hover:shadow-md active:scale-95 sm:text-sm"
+          >
+            <span>ดูอีเวนต์เพิ่มเติมทั้งหมด</span>
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+      </section>
+
+      {/* 6. High Impact Organizer CTA Banner (Zipevent Style) */}
+      <section className="container py-8 sm:py-12">
+        <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-[#241f28] via-[#322332] to-[#201c24] px-6 py-10 text-white shadow-lg sm:px-12 sm:py-14">
+          {/* Subtle Decorative Background Circles */}
+          <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-[#ef5360]/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 right-1/3 h-64 w-64 rounded-full bg-orange-500/15 blur-3xl" />
+
+          <div className="relative z-10 flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
+            <div className="max-w-2xl">
+              <span className="inline-block rounded-full bg-[#ef5360]/20 px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[#ff808c]">
+                สำหรับผู้จัดงานอีเวนต์
+              </span>
+              <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
+                สร้างอีเวนต์ของคุณกับ <span className="text-[#ef5360]">TixFlow</span>
+              </h2>
+              <p className="mt-2 text-xs leading-relaxed text-gray-300 sm:text-sm">
+                ระบบจัดการอีเวนต์และจำหน่ายบัตรออนไลน์ครบวงจร รวดเร็ว ปลอดภัย พร้อมเครื่องมือช่วยดันยอดขายและดูแลผู้เข้าร่วมงานอย่างไร้รอยต่อ
+              </p>
+
+              {/* Feature Badges */}
+              <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-gray-300 sm:text-sm">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle size={16} className="text-[#ef5360]" />
+                  <span>เปิดขายบัตรได้ใน 5 นาที</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck size={16} className="text-[#ef5360]" />
+                  <span>ระบบชำระเงินปลอดภัย 100%</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <BarChart3 size={16} className="text-[#ef5360]" />
+                  <span>แดชบอร์ดสถิติแบบ Real-time</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
+              <Link
+                href="/organizer/events/create"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#ef5360] px-7 py-3 text-xs font-bold text-white shadow-md transition-all duration-200 hover:bg-[#ec3746] hover:shadow-lg active:scale-95 sm:text-sm"
+              >
+                <PlusCircle size={18} />
+                <span>สร้างอีเวนต์เลย</span>
+              </Link>
+              <Link
+                href="/articles"
+                className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-6 py-3 text-xs font-semibold text-white backdrop-blur-xs transition-colors hover:bg-white/20 sm:text-sm"
+              >
+                ศึกษาบริการเพิ่มเติม
+              </Link>
+            </div>
           </div>
-          <div className="pointer-events-none absolute bottom-7 right-[360px] hidden rounded-xl bg-white px-4 py-3 shadow-lg lg:block"><div className="text-[10px] font-bold uppercase tracking-widest text-[#ed7046]">This weekend</div><div className="mt-1 text-sm font-bold text-slate-800">Make a little room for fun</div></div>
         </div>
       </section>
 
-      <section className="container pt-10 sm:pt-12">
-        <div className="mb-5 flex items-end justify-between gap-4"><div><h2 className="section-title">Explore by category</h2><p className="section-subtitle">A little something for every kind of curious.</p></div><Link href="/events" className="hidden items-center gap-1 text-xs font-bold text-[#e7653c] sm:flex">View all <ArrowRight size={14} /></Link></div>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 md:grid-cols-6 lg:grid-cols-12">
-          {categories.map((category, index) => <Link key={`${category.label}-${index}`} href={`/events?category=${category.value}`} className="category-chip !min-w-0 !gap-2 !px-2 !py-3">
-            <span className="category-icon !h-9 !w-9 !rounded-xl text-base">{category.icon}</span><span className="line-clamp-1 max-w-full text-center text-[10px] sm:text-[11px]">{category.label}</span>
-          </Link>)}
-        </div>
-      </section>
+      {/* 7. Articles & Blog Section */}
+      <BlogSection />
 
-      <section className="container pt-12 sm:pt-16">
-        <div className="mb-5 flex items-end justify-between gap-4"><div><p className="eyebrow mb-2">Picked for you</p><h2 className="section-title">Trending events</h2><p className="section-subtitle">The experiences everyone is talking about.</p></div><Link href="/events?sort=popular" className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#e7653c]">See more <ArrowRight size={14} /></Link></div>
-        <EventGrid events={popularEvents.slice(0, 4)} />
-      </section>
-
-      <section className="container pt-12 sm:pt-16">
-        <div className="mb-5 flex items-end justify-between gap-4"><div><p className="eyebrow mb-2">Made to be shared</p><h2 className="section-title">Explore our partners&apos; events</h2><p className="section-subtitle">Find something new from event makers we love.</p></div><Link href="/events" className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#e7653c]">View all <ArrowRight size={14} /></Link></div>
-        <EventGrid events={featuredEvents.slice(0, 4)} compact />
-      </section>
-
-      <section className="container pt-12 sm:pt-16">
-        <div className="mb-5 flex items-end justify-between gap-4"><div><p className="eyebrow mb-2">Save your spot</p><h2 className="section-title">Register &amp; tickets</h2><p className="section-subtitle">Plan ahead for the moments you don&apos;t want to miss.</p></div><Link href="/events" className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#e7653c]">See more <ArrowRight size={14} /></Link></div>
-        <EventGrid events={featuredEvents.slice(4, 8)} />
-      </section>
-
-      <section className="container pt-12 sm:pt-16">
-        <div className="flex flex-col justify-between gap-6 rounded-[22px] bg-[#242b36] px-6 py-8 text-white sm:flex-row sm:items-center sm:px-10">
-          <div><p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#ffad8e]">For organizers</p><h2 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">Bring your next event to life.</h2><p className="mt-2 max-w-lg text-sm leading-6 text-slate-300">Create memorable experiences and keep your event moving with Zipevent.</p></div>
-          <Link href="/organizer/events/create" className="button-primary shrink-0 self-start !bg-white !text-[#353a43] hover:!bg-orange-50 sm:self-center">Create an event <ArrowRight size={16} /></Link>
-        </div>
-      </section>
+      {/* 8. Event Categories Section */}
+      <CategoriesSection />
     </main>
   );
 }

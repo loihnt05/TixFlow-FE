@@ -17,7 +17,20 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-prompt)", "Prompt", "Helvetica Neue", "Helvetica", "Arial", "sans-serif"],
+      },
       colors: {
+        brand: {
+          DEFAULT: "#ef5360",
+          hover: "#ec3746",
+          active: "#d71424",
+          light: "#FFEFF0",
+          dark: "#212529",
+          black: "#2B212B",
+          gray: "#8E8E8E",
+          bg: "#F6F6F6",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -56,6 +69,9 @@ const config: Config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      gridTemplateColumns: {
+        '5': 'repeat(5, minmax(0, 1fr))',
       },
       keyframes: {
         "accordion-down": {
