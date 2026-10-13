@@ -16,6 +16,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import type { Event } from "@/lib/mock/events";
+import { useApi } from "@/lib/api";
+import { useKeycloakAuth } from "@/components/auth-provider";
 
 const money = new Intl.NumberFormat("vi-VN");
 type Payment = "card" | "bank" | "wallet";
@@ -24,21 +26,33 @@ export function CheckoutView({
   event,
   ticketId,
   quantity,
+  sessionId,
+  inventoryMode = "GeneralAdmission",
+  seatIds = [],
 }: {
   event: Event;
   ticketId: string;
   quantity: number;
+  sessionId?: string;
+  inventoryMode?: string;
+  seatIds?: string[];
 }) {
   const router = useRouter();
+  const api = useApi();
+  const auth = useKeycloakAuth();
   const [payment, setPayment] = useState<Payment>("card");
   const [timeLeft, setTimeLeft] = useState(900); // 15:00 countdown timer
+  const [submitting, setSubmitting] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string>();
+  const [serverTotal, setServerTotal] = useState<number>();
 
   // Find ticket
   const ticket = event.ticketTypes.find((item) => item.id === ticketId) ?? event.ticketTypes[0];
   const safeQuantity = Math.max(1, Math.min(quantity || 1, ticket.maxPerOrder));
   const subtotal = ticket.price * safeQuantity;
-  const serviceFee = subtotal > 0 ? Math.round(subtotal * 0.05) : 0;
+  const serviceFee = 0;
   const grandTotal = subtotal + serviceFee;
+  const displayedTotal = serverTotal ?? grandTotal;
 
   // Countdown timer
   useEffect(() => {
@@ -53,26 +67,60 @@ export function CheckoutView({
   const seconds = timeLeft % 60;
   const timeFormatted = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 
-  function completeOrder(formEvent: FormEvent<HTMLFormElement>) {
+  async function completeOrder(formEvent: FormEvent<HTMLFormElement>) {
     formEvent.preventDefault();
-    const form = new FormData(formEvent.currentTarget);
-    const orderId = `TF-${Date.now().toString().slice(-8)}`;
-    const order = {
-      id: orderId,
-      eventSlug: event.slug,
-      eventTitle: event.title,
-      ticket: ticket.name,
-      quantity: safeQuantity,
-      name: String(form.get("name")),
-      email: String(form.get("email")),
-      phone: String(form.get("phone")),
-      total: grandTotal,
-      payment,
-      createdAt: new Date().toISOString(),
-    };
-    localStorage.setItem("tixflow-last-order", JSON.stringify(order));
-    localStorage.setItem("zipevent-last-order", JSON.stringify(order)); // backward compat
-    router.push(`/checkout/success?event=${event.slug}`);
+    if (!auth.authenticated) {
+      await auth.login(window.location.href);
+      return;
+    }
+    if (!sessionId || !/^[0-9a-f-]{36}$/i.test(sessionId) || !/^[0-9a-f-]{36}$/i.test(ticketId)) {
+      setCheckoutError("Chưa có mã suất diễn/vé từ danh mục backend. Hãy mở checkout từ một Hold hợp lệ.");
+      return;
+    }
+    setSubmitting(true);
+    setCheckoutError(undefined);
+    try {
+      const holdStorageKey = `tixflow-hold-idempotency-${sessionId}-${ticketId}-${safeQuantity}-${seatIds.join("-")}`;
+      const holdKey = sessionStorage.getItem(holdStorageKey) ?? crypto.randomUUID();
+      sessionStorage.setItem(holdStorageKey, holdKey);
+      const holdResult = await api<{ data: { id: string; version: number; totalAmount: number; expiresAtUtc: string } }>(
+        "/api/v1/holds",
+        { method: "POST", headers: { "Idempotency-Key": holdKey }, body: JSON.stringify({
+          eventSessionId: sessionId,
+          items: [{ ticketTypeId: ticketId, inventoryMode, quantity: safeQuantity, ...(seatIds.length ? { seatIds } : {}) }],
+        }) },
+      );
+      const hold = holdResult.data;
+      setServerTotal(hold.totalAmount);
+      const orderKey = sessionStorage.getItem(`tixflow-order-key-${hold.id}`) ?? crypto.randomUUID();
+      sessionStorage.setItem(`tixflow-order-key-${hold.id}`, orderKey);
+      const orderResult = await api<{ data: { id: string; version: number; totalAmount: number } }>(
+        `/api/v1/holds/${hold.id}/checkout`,
+        { method: "POST", headers: { "Idempotency-Key": orderKey, "X-Expected-Version": String(hold.version) } },
+      );
+      const order = orderResult.data;
+      const paymentKey = sessionStorage.getItem(`tixflow-payment-key-${order.id}`) ?? crypto.randomUUID();
+      sessionStorage.setItem(`tixflow-payment-key-${order.id}`, paymentKey);
+      const paymentResult = await api<{ data: { id: string } }>(
+        `/api/v1/orders/${order.id}/payments/mock`,
+        { method: "POST", headers: { "Idempotency-Key": paymentKey, "X-Expected-Version": String(order.version) },
+          body: JSON.stringify({ outcome: "Succeeded" }) },
+      );
+      for (let attempt = 0; attempt < 30; attempt++) {
+        const current = await api<{ data: { status: string; failureReason?: string } }>(`/api/v1/payments/${paymentResult.data.id}`);
+        if (current.data.status !== "Pending") {
+          if (current.data.status !== "Succeeded") throw new Error(current.data.failureReason ?? "Thanh toán chưa thành công.");
+          router.push(`/checkout/success?event=${event.slug}&orderId=${order.id}`);
+          return;
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 300));
+      }
+      router.push(`/checkout/success?event=${event.slug}&orderId=${order.id}`);
+    } catch (cause) {
+      setCheckoutError(cause instanceof Error ? cause.message : "Không thể hoàn tất thanh toán.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -110,6 +158,7 @@ export function CheckoutView({
 
         {/* Main Checkout Form */}
         <form onSubmit={completeOrder} className="grid gap-8 lg:grid-cols-[1fr_360px]">
+          {checkoutError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 lg:col-span-2">{checkoutError}</p>}
           {/* Left Form: Attendee Info & Payment */}
           <div className="space-y-6">
             {/* 1. Attendee Information */}
@@ -237,7 +286,7 @@ export function CheckoutView({
               <div className="mt-4 flex items-center gap-2 rounded-xl bg-gray-50 p-3 text-[11px] text-gray-500">
                 <LockKeyhole size={14} className="text-gray-400 shrink-0" />
                 <span>
-                  โหมดจำลองคำสั่งซื้อ (Mock Sandbox) — ระบบจะทำการออกตั๋วทันทีโดยไม่ตัดเงินจริง
+                  Mock Sandbox — không thu tiền thật. Vé điện tử sẽ được phát hành ở bước tiếp theo sau thanh toán.
                 </span>
               </div>
             </section>
@@ -284,8 +333,8 @@ export function CheckoutView({
               <div className="flex items-baseline justify-between border-t border-gray-200 pt-4">
                 <span className="text-sm font-bold text-[#2B212B]">ยอดชำระสุทธิ</span>
                 <div className="text-right">
-                  <span className="text-xl font-black text-[#ef5360]">
-                    {money.format(grandTotal)} VND
+                <span className="text-xl font-black text-[#ef5360]">
+                    {money.format(displayedTotal)} VND
                   </span>
                   <span className="block text-[10px] text-gray-400">รวมภาษีมูลค่าเพิ่มแล้ว</span>
                 </div>
@@ -294,10 +343,11 @@ export function CheckoutView({
               {/* Submit Button */}
               <button
                 type="submit"
+                disabled={submitting}
                 className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-[#ef5360] py-3.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#ec3746] hover:shadow-lg active:scale-98 sm:text-sm"
               >
                 <LockKeyhole size={16} />
-                <span>ยืนยันการสั่งซื้อ · {money.format(grandTotal)} VND</span>
+                <span>{submitting ? "Đang xử lý…" : `Xác nhận · ${money.format(displayedTotal)} VND`}</span>
               </button>
 
               <p className="mt-4 text-center text-[11px] text-gray-400">

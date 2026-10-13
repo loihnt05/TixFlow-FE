@@ -5,6 +5,7 @@ import { getEventBySlug } from "@/lib/mock-api/events";
 interface SuccessPageProps {
   searchParams: Promise<{
     event?: string;
+    orderId?: string;
   }>;
 }
 
@@ -13,7 +14,7 @@ export default async function CheckoutSuccessPage({ searchParams }: SuccessPageP
   const event = typeof params?.event === "string" ? await getEventBySlug(params.event) : undefined;
   return (
     <Suspense fallback={<main className="container py-20 text-center">กำลังโหลดข้อมูลตั๋วของคุณ…</main>}>
-      <SuccessView event={event} />
+      <SuccessView event={event} orderId={params.orderId} />
     </Suspense>
   );
 }

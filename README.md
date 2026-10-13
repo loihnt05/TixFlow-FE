@@ -1,6 +1,6 @@
 # TixFlow frontend
 
-A Next.js frontend for event discovery and ticketing. Authentication uses Keycloak through `keycloak-js`; `/account` calls the TixFlow API and displays the local profile synchronized from the access-token `sub`. Event, checkout and organizer screens still use mock data until their backend modules are implemented.
+A Next.js frontend for event discovery and ticketing. Authentication uses Keycloak through `keycloak-js`; `/account` calls the TixFlow API and displays the local profile synchronized from the access-token `sub`. Public catalog, Organizer event setup and ticket inventory use the TixFlow API; checkout and downstream order/payment screens remain mock flows for later phases.
 
 ## Requirements
 

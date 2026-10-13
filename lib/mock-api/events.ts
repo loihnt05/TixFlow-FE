@@ -1,53 +1,61 @@
-import { mockEvents, type Event, type EventCategory, type EventFilters, type PaginatedEvents } from "@/lib/mock/events";
+import { apiBaseUrl } from "@/lib/public-config";
+import { toPublicEvent, type PublicEventDto, type PublicEventPageDto } from "@/lib/catalog";
+import type { Event, EventCategory, EventFilters, PaginatedEvents } from "@/lib/mock/events";
 
-export async function getEvents(filters: EventFilters = {}): Promise<PaginatedEvents> {
-  const query = filters.query?.trim().toLocaleLowerCase();
-  let events = mockEvents.filter((event) => {
-    if (event.status !== "published" && event.status !== "sold_out") return false;
-    if (query && !`${event.title} ${event.shortDescription} ${event.venue.city} ${event.organizer.name}`.toLocaleLowerCase().includes(query)) return false;
-    if (filters.category && event.category !== filters.category) return false;
-    if (filters.city && event.venue.city !== filters.city) return false;
-    if (filters.dateFrom && event.startDate < filters.dateFrom) return false;
-    if (filters.dateTo && event.startDate.slice(0, 10) > filters.dateTo) return false;
-    const price = Math.min(...event.ticketTypes.map((ticket) => ticket.price));
-    if (filters.priceMin !== undefined && price < filters.priceMin) return false;
-    if (filters.priceMax !== undefined && price > filters.priceMax) return false;
-    return true;
+async function publicApi<T>(path: string): Promise<T> {
+  const baseUrl = apiBaseUrl();
+  if (!baseUrl) throw new Error("Chưa cấu hình NEXT_PUBLIC_API_URL.");
+  const response = await fetch(`${baseUrl}${path}`, {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
   });
-
-  switch (filters.sortBy) {
-    case "date_desc": events = [...events].sort((a, b) => b.startDate.localeCompare(a.startDate)); break;
-    case "price_asc": events = [...events].sort((a, b) => minPrice(a) - minPrice(b)); break;
-    case "price_desc": events = [...events].sort((a, b) => minPrice(b) - minPrice(a)); break;
-    case "popularity": events = [...events].sort((a, b) => b.viewCount - a.viewCount); break;
-    case "newest": events = [...events].sort((a, b) => b.createdAt.localeCompare(a.createdAt)); break;
-    default: events = [...events].sort((a, b) => a.startDate.localeCompare(b.startDate));
+  if (!response.ok) {
+    if (response.status === 404) throw new EventNotFoundError();
+    throw new Error(`Không thể tải danh sách sự kiện (${response.status}).`);
   }
-
-  const page = Math.max(1, filters.page ?? 1);
-  const limit = Math.max(1, filters.limit ?? 12);
-  const total = events.length;
-  return { events: events.slice((page - 1) * limit, page * limit), total, page, limit, totalPages: Math.max(1, Math.ceil(total / limit)) };
+  return response.json() as Promise<T>;
 }
 
-const minPrice = (event: Event) => Math.min(...event.ticketTypes.map((ticket) => ticket.price));
+export async function getEvents(filters: EventFilters = {}): Promise<PaginatedEvents> {
+  const params = new URLSearchParams();
+  if (filters.query) params.set("q", filters.query);
+  if (filters.category) params.set("category", filters.category);
+  if (filters.city) params.set("location", filters.city);
+  if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
+  if (filters.dateTo) params.set("dateTo", filters.dateTo);
+  if (filters.status) params.set("status", filters.status);
+  if (filters.sortBy) params.set("sortBy", filters.sortBy);
+  params.set("page", String(filters.page ?? 1));
+  params.set("limit", String(filters.limit ?? 12));
+
+  const result = await publicApi<PublicEventPageDto>(`/api/v1/events?${params}`);
+  return { ...result, events: result.events.map(toPublicEvent) };
+}
 
 export async function getEventBySlug(slug: string): Promise<Event | undefined> {
-  return mockEvents.find((event) => event.slug === slug);
+  try {
+    return toPublicEvent(await publicApi<PublicEventDto>(`/api/v1/events/${encodeURIComponent(slug)}`));
+  } catch (cause) {
+    if (cause instanceof EventNotFoundError) return undefined;
+    throw cause;
+  }
 }
 
 export async function getFeaturedEvents(): Promise<Event[]> {
-  return mockEvents.filter((event) => event.featured).slice(0, 8);
+  return (await getEvents({ limit: 8, sortBy: "date_asc" })).events;
 }
 
 export async function getPopularEvents(): Promise<Event[]> {
-  return [...mockEvents].sort((a, b) => b.viewCount - a.viewCount).slice(0, 8);
+  return (await getEvents({ limit: 8, sortBy: "newest" })).events;
 }
 
 export async function getRelatedEvents(event: Event, limit = 4): Promise<Event[]> {
-  return mockEvents.filter((candidate) => candidate.id !== event.id && candidate.category === event.category).slice(0, limit);
+  const result = await getEvents({ category: event.category, limit: Math.min(limit + 1, 100) });
+  return result.events.filter((candidate) => candidate.id !== event.id).slice(0, limit);
 }
 
 export async function getEventsByCategory(category: EventCategory, limit = 8): Promise<Event[]> {
-  return mockEvents.filter((event) => event.category === category).slice(0, limit);
+  return (await getEvents({ category, limit })).events;
 }
+
+class EventNotFoundError extends Error {}

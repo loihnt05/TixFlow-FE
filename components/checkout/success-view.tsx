@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   Check,
+  Clock,
   Download,
   Ticket,
   Calendar,
@@ -14,6 +15,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import type { Event } from "@/lib/mock/events";
+import { useApi } from "@/lib/api";
 
 interface SavedOrder {
   id: string;
@@ -29,10 +31,33 @@ interface SavedOrder {
 
 const money = new Intl.NumberFormat("vi-VN");
 
-export function SuccessView({ event }: { event?: Event }) {
+export function SuccessView({ event, orderId }: { event?: Event; orderId?: string }) {
+  const api = useApi();
   const [order, setOrder] = useState<SavedOrder | null>(null);
+  const [orderStatus, setOrderStatus] = useState<string>();
+  const [orderTotal, setOrderTotal] = useState<number>();
+  const [orderNumber, setOrderNumber] = useState<string>();
 
   useEffect(() => {
+    if (orderId) {
+      const controller = new AbortController();
+      let timer: number | undefined;
+      const refresh = async () => {
+        try {
+          const result = await api<{ data: { status: string; totalAmount: number; currency: string; orderNumber: string } }>(
+            `/api/v1/orders/${orderId}`, controller.signal,
+          );
+          setOrderStatus(result.data.status);
+          setOrderTotal(result.data.totalAmount);
+          setOrderNumber(result.data.orderNumber);
+          if (result.data.status === "PendingPayment") timer = window.setTimeout(refresh, 1200);
+        } catch {
+          if (!controller.signal.aborted) setOrderStatus("Unavailable");
+        }
+      };
+      void refresh();
+      return () => { controller.abort(); if (timer) window.clearTimeout(timer); };
+    }
     const value =
       localStorage.getItem("tixflow-last-order") ||
       localStorage.getItem("zipevent-last-order");
@@ -43,9 +68,30 @@ export function SuccessView({ event }: { event?: Event }) {
         console.error(e);
       }
     }
-  }, []);
+  }, [api, orderId]);
 
   const eventHref = event ? `/events/${event.slug}` : "/events";
+
+  if (orderId) {
+    const paid = orderStatus === "Paid";
+    return (
+      <main className="min-h-screen bg-[#FDFCFD] px-4 py-16">
+        <section className="mx-auto max-w-xl rounded-3xl border border-gray-100 bg-white p-8 text-center shadow-lg">
+          <div className={`mx-auto grid h-16 w-16 place-items-center rounded-full ${paid ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"}`}>
+            {paid ? <Check size={32} /> : <Clock size={28} />}
+          </div>
+          <h1 className="mt-5 text-2xl font-bold text-[#2B212B]">{paid ? "Thanh toán thành công" : "Đang xác nhận thanh toán"}</h1>
+          <p className="mt-2 text-sm text-gray-500">{paid ? "Đơn hàng đã được ghi nhận. Vé điện tử sẽ xuất hiện trong tài khoản sau bước phát hành vé." : "Trạng thái thanh toán đang được cập nhật từ nhà cung cấp."}</p>
+          <div className="mt-6 rounded-xl bg-gray-50 p-4 text-left text-sm">
+            <div className="flex justify-between"><span className="text-gray-500">Mã đơn</span><strong>{orderNumber ?? orderId}</strong></div>
+            {orderTotal !== undefined && <div className="mt-2 flex justify-between"><span className="text-gray-500">Tổng tiền</span><strong>{money.format(orderTotal)} VND</strong></div>}
+            <div className="mt-2 flex justify-between"><span className="text-gray-500">Trạng thái</span><strong>{orderStatus ?? "Đang tải…"}</strong></div>
+          </div>
+          <Link href="/account/orders" className="mt-6 inline-flex rounded-full bg-[#ef5360] px-6 py-3 text-sm font-bold text-white">Xem lịch sử đơn hàng</Link>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#FDFCFD] pb-20 pt-8 sm:pt-12">

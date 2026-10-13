@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "node .next/standalone/server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "dev:theme": "npm --prefix keycloak-theme run dev",
+    "build:theme": "npm --prefix keycloak-theme run build-keycloak-theme"
   },
   "engines": {
     "node": ">=22 <23"
@@ -34,6 +36,7 @@
     "lucide-react": "^1.55.0",
     "next": "16.3.4",
     "postcss": "^8.5.29",
+    "puppeteer-core": "^25.13.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "swiper": "^14.3.0",

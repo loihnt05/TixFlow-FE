@@ -50,6 +50,7 @@ export function EventDetailView({
   });
 
   const [favorite, setFavorite] = useState(false);
+  const [selectedSeats, setSelectedSeats] = useState<Record<string, string[]>>({});
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"info" | "tickets" | "organizer" | "location">("info");
 
@@ -89,18 +90,41 @@ export function EventDetailView({
     });
   };
 
+  const toggleSeat = (ticket: TicketType, seatId: string) => {
+    setSelectedSeats((previous) => {
+      const selected = previous[ticket.id] ?? [];
+      const next = selected.includes(seatId)
+        ? selected.filter((id) => id !== seatId)
+        : selected.length < ticket.maxPerOrder ? [...selected, seatId] : selected;
+      return { ...previous, [ticket.id]: next };
+    });
+  };
+
   // Calculations
-  const totalTickets = Object.values(quantities).reduce((a, b) => a + b, 0);
+  const totalTickets = event.ticketTypes.reduce((sum, ticket) =>
+    sum + (ticket.inventoryMode === "ReservedSeating"
+      ? (selectedSeats[ticket.id]?.length ?? 0)
+      : (quantities[ticket.id] ?? 0)), 0);
   const subtotal = event.ticketTypes.reduce((sum, t) => {
-    return sum + t.price * (quantities[t.id] || 0);
+    const selected = t.inventoryMode === "ReservedSeating"
+      ? (selectedSeats[t.id]?.length ?? 0)
+      : (quantities[t.id] ?? 0);
+    return sum + t.price * selected;
   }, 0);
   const serviceFee = subtotal > 0 ? Math.round(subtotal * 0.05) : 0; // 5% platform fee
   const grandTotal = subtotal + serviceFee;
 
   // Selected ticket for checkout URL
-  const selectedTicketEntry = Object.entries(quantities).find(([_, qty]) => qty > 0);
-  const checkoutHref = selectedTicketEntry
-    ? `/checkout?event=${event.slug}&ticket=${selectedTicketEntry[0]}&quantity=${selectedTicketEntry[1]}`
+  const selectedTicket = event.ticketTypes.find((ticket) =>
+    ticket.inventoryMode === "ReservedSeating"
+      ? (selectedSeats[ticket.id]?.length ?? 0) > 0
+      : (quantities[ticket.id] ?? 0) > 0);
+  const selectedSeatIds = selectedTicket ? (selectedSeats[selectedTicket.id] ?? []) : [];
+  const selectedQuantity = selectedTicket?.inventoryMode === "ReservedSeating"
+    ? selectedSeatIds.length
+    : selectedTicket ? (quantities[selectedTicket.id] ?? 0) : 0;
+  const checkoutHref = selectedTicket
+    ? `/checkout?event=${event.slug}&ticket=${selectedTicket.id}&quantity=${selectedQuantity}${selectedSeatIds.length ? `&seats=${selectedSeatIds.join(",")}` : ""}`
     : `/checkout?event=${event.slug}&ticket=${event.ticketTypes[0]?.id}&quantity=1`;
 
   const scrollToTickets = () => {
@@ -286,18 +310,21 @@ export function EventDetailView({
               </h2>
               <span className="text-xs text-gray-500">
                 เหลือทั้งหมด{" "}
-                {event.ticketTypes.reduce((acc, t) => acc + (t.quantity - t.sold), 0)} ที่นั่ง
+                {event.ticketTypes.reduce((acc, t) => acc + (t.availableQuantity ?? (t.quantity - t.sold)), 0)} ที่นั่ง
               </span>
             </div>
 
             <div className="space-y-3.5">
               {event.ticketTypes.map((ticketItem) => {
+                const available = ticketItem.availableQuantity ?? (ticketItem.quantity - ticketItem.sold);
                 const max = Math.min(
                   ticketItem.maxPerOrder,
-                  ticketItem.quantity - ticketItem.sold
+                  available
                 );
-                const currentQty = quantities[ticketItem.id] || 0;
-                const isSoldOut = ticketItem.quantity <= ticketItem.sold;
+                const currentQty = ticketItem.inventoryMode === "ReservedSeating"
+                  ? (selectedSeats[ticketItem.id]?.length ?? 0)
+                  : (quantities[ticketItem.id] || 0);
+                const isSoldOut = available <= 0;
 
                 return (
                   <div
@@ -356,7 +383,11 @@ export function EventDetailView({
                         </div>
 
                         {/* Quantity Counter */}
-                        <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50/50 p-1">
+                        {ticketItem.inventoryMode === "ReservedSeating" ? (
+                          <div className="rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-[#2B212B]">
+                            {currentQty} seat{currentQty === 1 ? "" : "s"}
+                          </div>
+                        ) : <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50/50 p-1">
                           <button
                             type="button"
                             disabled={isSoldOut || currentQty <= 0}
@@ -376,9 +407,29 @@ export function EventDetailView({
                           >
                             <Plus size={13} />
                           </button>
-                        </div>
+                        </div>}
                       </div>
                     </div>
+                    {ticketItem.inventoryMode === "ReservedSeating" && ticketItem.seats && (
+                      <div className="mt-4 border-t border-gray-100 pt-4">
+                        <div className="mb-3 flex items-center justify-between text-[11px] text-gray-500">
+                          <span>Select up to {ticketItem.maxPerOrder} seats</span>
+                          <span>Available · Held · Sold</span>
+                        </div>
+                        <div className="grid grid-cols-5 gap-2 sm:grid-cols-8">
+                          {ticketItem.seats.map((seat) => {
+                            const selected = (selectedSeats[ticketItem.id] ?? []).includes(seat.id);
+                            const availableSeat = seat.status === "Available";
+                            return <button key={seat.id} type="button" disabled={!availableSeat}
+                              onClick={() => toggleSeat(ticketItem, seat.id)}
+                              aria-label={`${seat.section} ${seat.rowLabel}${seat.seatNumber} ${seat.status}`}
+                              className={`rounded-lg border px-2 py-2 text-[10px] font-bold transition-colors ${selected ? "border-[#ef5360] bg-[#ef5360] text-white" : availableSeat ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-[#ef5360]" : "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"}`}>
+                              {seat.rowLabel}{seat.seatNumber}
+                            </button>;
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}

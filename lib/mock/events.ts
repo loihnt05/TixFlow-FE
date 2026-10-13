@@ -91,6 +91,18 @@ export interface TicketType {
   saleEnd: string;
   status: TicketStatus;
   benefits: string[];
+  inventoryMode?: "GeneralAdmission" | "ReservedSeating";
+  availableQuantity?: number;
+  seats?: SeatAvailability[];
+}
+
+export interface SeatAvailability {
+  id: string;
+  section: string;
+  rowLabel: string;
+  seatNumber: string;
+  isAccessible: boolean;
+  status: "Available" | "Held" | "Sold" | "Unavailable";
 }
 
 export type TicketStatus = "available" | "sold_out" | "ended" | "not_started";

@@ -21,10 +21,8 @@ import {
 } from "lucide-react";
 import { EventGrid } from "@/components/events/event-grid";
 import type { MockTicket } from "@/lib/mock/tickets";
-import type { MockOrder } from "@/lib/mock/orders";
 import type { Event } from "@/lib/mock/events";
 import { getMyTickets } from "@/lib/mock-api/tickets";
-import { getOrders } from "@/lib/mock-api/orders";
 import { getEvents } from "@/lib/mock-api/events";
 import { useKeycloakAuth } from "@/components/auth-provider";
 import { useApi, type CurrentUser } from "@/lib/api";
@@ -38,6 +36,10 @@ const menu = [
 ];
 
 const money = new Intl.NumberFormat("vi-VN");
+type AccountOrder = {
+  id: string; orderNumber: string; status: string; totalAmount: number; currency: string;
+  createdAtUtc: string; eventName: string; items: Array<{ quantity: number; ticketTypeNameSnapshot: string }>;
+};
 
 export function AccountView({ section = "profile" }: { section?: string }) {
   const auth = useKeycloakAuth();
@@ -48,7 +50,7 @@ export function AccountView({ section = "profile" }: { section?: string }) {
   const [profileRole, setProfileRole] = useState<string>(auth.roles[0] ?? "");
   const [profileError, setProfileError] = useState<string>();
   const [tickets, setTickets] = useState<MockTicket[]>([]);
-  const [orders, setOrders] = useState<MockOrder[]>([]);
+  const [orders, setOrders] = useState<AccountOrder[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [saved, setSaved] = useState<string[]>([]);
   const [ticketFilter, setTicketFilter] = useState<"all" | "upcoming" | "past">("all");
@@ -73,7 +75,11 @@ export function AccountView({ section = "profile" }: { section?: string }) {
     });
     if (isCustomer) {
       void getMyTickets().then(setTickets);
-      void getOrders("user-001").then(setOrders);
+      void api<{ data: AccountOrder[] }>("/api/v1/orders", controller.signal)
+        .then((result) => { if (!controller.signal.aborted) setOrders(result.data); })
+        .catch((cause) => {
+          if (!controller.signal.aborted) setProfileError(cause instanceof Error ? cause.message : "ไม่สามารถโหลดรายการสั่งซื้อได้");
+        });
       void getEvents({ limit: 100 }).then((result) => setEvents(result.events));
       setSaved(
         JSON.parse(
@@ -380,19 +386,17 @@ export function AccountView({ section = "profile" }: { section?: string }) {
                       <tr key={o.id} className="hover:bg-gray-50/50">
                         <td className="py-3.5 font-bold font-mono text-[#2B212B]">{o.id}</td>
                         <td className="py-3.5 font-semibold text-gray-800">
-                          <Link href={`/events/${o.eventSlug}`} className="hover:text-[#ef5360]">
-                            {o.eventTitle}
-                          </Link>
+                          {o.eventName}
                         </td>
                         <td className="py-3.5 text-gray-500">
-                          {new Date(o.date).toLocaleDateString("th-TH")}
+                          {new Date(o.createdAtUtc).toLocaleDateString("th-TH")}
                         </td>
                         <td className="py-3.5 font-bold text-[#ef5360]">
-                          {money.format(o.amount)} VND
+                          {money.format(o.totalAmount)} {o.currency}
                         </td>
                         <td className="py-3.5">
                           <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600">
-                            {o.status === "Confirmed" ? "ชำระแล้ว" : o.status}
+                            {o.status === "Paid" ? "ชำระแล้ว" : o.status}
                           </span>
                         </td>
                       </tr>

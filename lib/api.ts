@@ -10,10 +10,12 @@ export class ApiError extends Error {
 
 export function useApi() {
   const auth = useKeycloakAuth();
-  return useCallback(async <T,>(path: string, signal?: AbortSignal): Promise<T> => {
+  return useCallback(async <T,>(path: string, optionsOrSignal?: RequestInit | AbortSignal): Promise<T> => {
     const baseUrl = apiBaseUrl();
     if (!baseUrl) throw new Error("Chưa cấu hình địa chỉ API.");
     if (!path.startsWith("/api/v1/")) throw new Error("Đường dẫn API không hợp lệ.");
+    const options = optionsOrSignal instanceof AbortSignal ? { signal: optionsOrSignal } : (optionsOrSignal ?? {});
+    const signal = options.signal ?? undefined;
 
     const request = async (forceRefresh = false) => {
       let token: string;
@@ -24,7 +26,13 @@ export function useApi() {
       }
       try {
         return await fetch(`${baseUrl}${path}`, {
-          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+          ...options,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+            ...(options.body ? { "Content-Type": "application/json" } : {}),
+            ...options.headers,
+          },
           credentials: "omit",
           cache: "no-store",
           redirect: "error",
@@ -40,13 +48,15 @@ export function useApi() {
     if (response.status === 401 && !signal?.aborted) response = await request(true);
 
     if (!response.ok) {
+      const problem = await response.json().catch(() => undefined) as { detail?: string } | undefined;
       const messages: Record<number, string> = {
         401: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
         403: "Tài khoản không có quyền truy cập hoặc đã bị vô hiệu hóa.",
         409: "Email này trùng với hồ sơ hiện có. Liên hệ quản trị viên để xử lý tài khoản.",
       };
-      throw new ApiError(response.status, messages[response.status] ?? "Không thể tải dữ liệu. Vui lòng thử lại.");
+      throw new ApiError(response.status, problem?.detail ?? messages[response.status] ?? "Không thể tải dữ liệu. Vui lòng thử lại.");
     }
+    if (response.status === 204) return undefined as T;
     return response.json() as Promise<T>;
   }, [auth]);
 }
