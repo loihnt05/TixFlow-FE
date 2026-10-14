@@ -29,6 +29,11 @@ export async function getEvents(filters: EventFilters = {}): Promise<PaginatedEv
   params.set("limit", String(filters.limit ?? 12));
 
   const result = await publicApi<PublicEventPageDto>(`/api/v1/events?${params}`);
+  if (!result || !Array.isArray(result.events)) {
+    throw new Error(
+      "API /api/v1/events trả về dữ liệu không đúng định dạng (thiếu `events`). Backend có thể đang chạy phiên bản cũ — hãy build lại container API.",
+    );
+  }
   return { ...result, events: result.events.map(toPublicEvent) };
 }
 

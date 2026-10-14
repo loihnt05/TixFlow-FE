@@ -41,6 +41,7 @@ export function CheckoutView({
   const api = useApi();
   const auth = useKeycloakAuth();
   const [payment, setPayment] = useState<Payment>("card");
+  const [mockOutcome, setMockOutcome] = useState<"Succeeded" | "Failed" | "Timeout">("Succeeded");
   const [timeLeft, setTimeLeft] = useState(900); // 15:00 countdown timer
   const [submitting, setSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string>();
@@ -104,12 +105,15 @@ export function CheckoutView({
       const paymentResult = await api<{ data: { id: string } }>(
         `/api/v1/orders/${order.id}/payments/mock`,
         { method: "POST", headers: { "Idempotency-Key": paymentKey, "X-Expected-Version": String(order.version) },
-          body: JSON.stringify({ outcome: "Succeeded" }) },
+          body: JSON.stringify({ outcome: mockOutcome }) },
       );
       for (let attempt = 0; attempt < 30; attempt++) {
         const current = await api<{ data: { status: string; failureReason?: string } }>(`/api/v1/payments/${paymentResult.data.id}`);
         if (current.data.status !== "Pending") {
-          if (current.data.status !== "Succeeded") throw new Error(current.data.failureReason ?? "Thanh toán chưa thành công.");
+          if (current.data.status !== "Succeeded") {
+            sessionStorage.removeItem(`tixflow-payment-key-${order.id}`);
+            throw new Error(current.data.failureReason ?? "Thanh toán chưa thành công.");
+          }
           router.push(`/checkout/success?event=${event.slug}&orderId=${order.id}`);
           return;
         }
@@ -282,6 +286,15 @@ export function CheckoutView({
                   );
                 })}
               </div>
+
+              <label className="mt-4 block text-xs font-semibold text-gray-700">
+                Kết quả mô phỏng (sandbox)
+                <select value={mockOutcome} onChange={(event) => setMockOutcome(event.target.value as typeof mockOutcome)} className="mt-1.5 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs">
+                  <option value="Succeeded">Thành công</option>
+                  <option value="Failed">Từ chối thanh toán</option>
+                  <option value="Timeout">Timeout, thử lại được</option>
+                </select>
+              </label>
 
               <div className="mt-4 flex items-center gap-2 rounded-xl bg-gray-50 p-3 text-[11px] text-gray-500">
                 <LockKeyhole size={14} className="text-gray-400 shrink-0" />
