@@ -795,6 +795,109 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   transform: translateY(-2px);
 }
 
+/* Blog & Articles Slider Components (ZipEvent inspired) */
+.main-slider .swiper {
+  width: 100%;
+}
+
+/* Blog Wide Banner Slider with Center Mode & Peeking Edge Banners */
+.blog-banner-slider .swiper {
+  overflow: visible !important;
+  width: 100%;
+}
+
+.blog-banner-slider .swiper-wrapper {
+  display: flex;
+  align-items: center;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* Base banner slide slot width - controls peek ratio */
+.blog-banner-slider .swiper-slide {
+  width: min(72vw, 1020px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  user-select: none;
+  background: transparent;
+}
+
+@media (max-width: 1200px) {
+  .blog-banner-slider .swiper-slide {
+    width: min(78vw, 860px);
+  }
+}
+
+@media (max-width: 768px) {
+  .blog-banner-slider .swiper-slide {
+    width: 86vw;
+  }
+}
+
+/* Inactive side banners: slightly scaled down and dimmed */
+.blog-banner-slider .blog-banner-card {
+  width: 100%;
+  transform-origin: center center;
+  transform: scale(0.92);
+  opacity: 0.60;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #18111b;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transition:
+    transform 480ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 480ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 480ms cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: pointer;
+}
+
+/* Active center banner: scale(1), full opacity, elevated shadow */
+.blog-banner-slider .swiper-slide-active .blog-banner-card {
+  transform: scale(1);
+  opacity: 1;
+  box-shadow: 0 16px 44px -6px rgba(0, 0, 0, 0.28), 0 4px 16px rgba(0, 0, 0, 0.08);
+  cursor: default;
+}
+
+@media (max-width: 640px) {
+  .blog-banner-slider .blog-banner-card {
+    transform: scale(0.95);
+    opacity: 0.68;
+    border-radius: 16px;
+  }
+  .blog-banner-slider .swiper-slide-active .blog-banner-card {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Semi-transparent veil over inactive banners */
+.blog-banner-card .banner-washout-veil {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  z-index: 20;
+  opacity: 1;
+  transition: opacity 480ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.blog-banner-slider .swiper-slide-active .blog-banner-card .banner-washout-veil {
+  opacity: 0;
+}
+
+.common-slider .swiper-slide,
+.classic-slider .swiper-slide {
+  height: auto;
+  display: flex;
+}
+
+.common-slider .swiper-slide > a,
+.classic-slider .swiper-slide > a {
+  width: 100%;
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

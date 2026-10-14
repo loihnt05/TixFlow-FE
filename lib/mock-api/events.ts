@@ -4,14 +4,14 @@ import type { Event, EventCategory, EventFilters, PaginatedEvents } from "@/lib/
 
 async function publicApi<T>(path: string): Promise<T> {
   const baseUrl = apiBaseUrl();
-  if (!baseUrl) throw new Error("Chưa cấu hình NEXT_PUBLIC_API_URL.");
+  if (!baseUrl) throw new Error("NEXT_PUBLIC_API_URL is not configured.");
   const response = await fetch(`${baseUrl}${path}`, {
     headers: { Accept: "application/json" },
     cache: "no-store",
   });
   if (!response.ok) {
     if (response.status === 404) throw new EventNotFoundError();
-    throw new Error(`Không thể tải danh sách sự kiện (${response.status}).`);
+    throw new Error(`Failed to load event list (${response.status}).`);
   }
   return response.json() as Promise<T>;
 }
@@ -31,7 +31,7 @@ export async function getEvents(filters: EventFilters = {}): Promise<PaginatedEv
   const result = await publicApi<PublicEventPageDto>(`/api/v1/events?${params}`);
   if (!result || !Array.isArray(result.events)) {
     throw new Error(
-      "API /api/v1/events trả về dữ liệu không đúng định dạng (thiếu `events`). Backend có thể đang chạy phiên bản cũ — hãy build lại container API.",
+      "The /api/v1/events API returned an unexpected response format (missing 'events'). The backend may be running an older version — please rebuild the API container.",
     );
   }
   return { ...result, events: result.events.map(toPublicEvent) };

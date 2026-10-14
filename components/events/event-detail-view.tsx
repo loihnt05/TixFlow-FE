@@ -24,8 +24,8 @@ import {
 import type { Event, TicketType } from "@/lib/mock/events";
 import { EventCard } from "./event-card";
 
-const money = new Intl.NumberFormat("vi-VN");
-const dateFormatter = new Intl.DateTimeFormat("th-TH", {
+const money = new Intl.NumberFormat("en-US");
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
   weekday: "long",
   day: "numeric",
   month: "long",
@@ -146,11 +146,11 @@ export function EventDetailView({
           {/* Breadcrumb */}
           <nav className="mb-6 flex items-center gap-1.5 text-xs text-gray-300">
             <Link href="/" className="hover:text-white">
-              หน้าแรก
+              Home
             </Link>
             <ChevronRight size={13} />
             <Link href="/events" className="hover:text-white">
-              อีเวนต์ทั้งหมด
+              All Events
             </Link>
             <ChevronRight size={13} />
             <span className="line-clamp-1 text-white">{event.title}</span>
@@ -184,14 +184,14 @@ export function EventDetailView({
                 <div className="flex items-center gap-2.5">
                   <Clock3 size={18} className="shrink-0 text-[#ef5360]" />
                   <span>
-                    {event.startTime} - {event.endTime} น. (ICT)
+                    {event.startTime} - {event.endTime} (ICT)
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <MapPin size={18} className="shrink-0 text-[#ef5360]" />
                   <span>
                     {event.venue.isOnline
-                      ? "ออนไลน์ผ่าน Live Stream"
+                      ? "Online via Live Stream"
                       : `${event.venue.name}, ${event.venue.city}`}
                   </span>
                 </div>
@@ -203,7 +203,7 @@ export function EventDetailView({
                   onClick={scrollToTickets}
                   className="rounded-full bg-[#ef5360] px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#ec3746] hover:shadow-lg active:scale-95 sm:text-sm"
                 >
-                  {event.status === "sold_out" ? "บัตรหมดแล้ว" : "ซื้อบัตร / ซื้อตั๋ว"}
+                  {event.status === "sold_out" ? "Sold Out" : "Buy Tickets"}
                 </button>
                 <button
                   onClick={toggleFavorite}
@@ -214,14 +214,14 @@ export function EventDetailView({
                   }`}
                 >
                   <Heart size={16} fill={favorite ? "currentColor" : "none"} />
-                  <span>{favorite ? "บันทึกแล้ว" : "บันทึก"}</span>
+                  <span>{favorite ? "Saved" : "Save"}</span>
                 </button>
                 <button
                   onClick={shareEvent}
                   className="flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-semibold text-white backdrop-blur-xs transition-colors hover:bg-white/20 sm:text-sm"
                 >
                   {copied ? <Check size={16} className="text-green-400" /> : <Share2 size={16} />}
-                  <span>{copied ? "คัดลอกลิงก์แล้ว!" : "แชร์"}</span>
+                  <span>{copied ? "Link copied!" : "Share"}</span>
                 </button>
               </div>
             </div>
@@ -241,7 +241,7 @@ export function EventDetailView({
                   : "hover:text-[#ef5360]"
               }`}
             >
-              ข้อมูลอีเวนต์
+              Event Info
             </button>
             <button
               onClick={() => {
@@ -254,7 +254,7 @@ export function EventDetailView({
                   : "hover:text-[#ef5360]"
               }`}
             >
-              บัตรและการจอง
+              Tickets
             </button>
             <button
               onClick={() => setActiveTab("location")}
@@ -264,7 +264,7 @@ export function EventDetailView({
                   : "hover:text-[#ef5360]"
               }`}
             >
-              สถานที่จัดงาน
+              Location
             </button>
             <button
               onClick={() => setActiveTab("organizer")}
@@ -274,16 +274,16 @@ export function EventDetailView({
                   : "hover:text-[#ef5360]"
               }`}
             >
-              ผู้จัดงาน
+              Organizer
             </button>
           </div>
 
           <div className="hidden items-center gap-4 py-2 md:flex">
             <span className="text-xs text-gray-500">
-              ราคาเริ่มต้น:{" "}
+              Starting from:{" "}
               <strong className="text-sm font-bold text-[#ef5360]">
                 {event.ticketTypes[0]?.price === 0
-                  ? "ฟรี"
+                  ? "Free"
                   : `${money.format(event.ticketTypes[0]?.price || 0)} VND`}
               </strong>
             </span>
@@ -291,7 +291,7 @@ export function EventDetailView({
               onClick={scrollToTickets}
               className="rounded-full bg-[#ef5360] px-5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#ec3746]"
             >
-              ซื้อบัตร
+              Buy Tickets
             </button>
           </div>
         </div>
@@ -306,11 +306,11 @@ export function EventDetailView({
             <div className="mb-4 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-lg font-bold text-[#2B212B] sm:text-xl">
                 <Ticket size={20} className="text-[#ef5360]" />
-                <span>เลือกรอบและประเภทบัตร</span>
+                <span>Select Tickets</span>
               </h2>
               <span className="text-xs text-gray-500">
-                เหลือทั้งหมด{" "}
-                {event.ticketTypes.reduce((acc, t) => acc + (t.availableQuantity ?? (t.quantity - t.sold)), 0)} ที่นั่ง
+                {" "}
+                {event.ticketTypes.reduce((acc, t) => acc + (t.availableQuantity ?? (t.quantity - t.sold)), 0)} seats left
               </span>
             </div>
 
@@ -343,11 +343,11 @@ export function EventDetailView({
                           </h3>
                           {isSoldOut ? (
                             <span className="rounded-full bg-gray-200 px-2.5 py-0.5 text-[10px] font-bold text-gray-600">
-                              บัตรหมด
+                              Sold Out
                             </span>
                           ) : (
                             <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600">
-                              เปิดจำหน่าย
+                              On Sale
                             </span>
                           )}
                         </div>
@@ -374,11 +374,11 @@ export function EventDetailView({
                         <div className="text-left sm:text-right">
                           <div className="text-lg font-bold text-[#ef5360]">
                             {ticketItem.price === 0
-                              ? "ฟรี"
+                              ? "Free"
                               : `${money.format(ticketItem.price)} VND`}
                           </div>
                           <span className="text-[10px] text-gray-400">
-                            สูงสุด {ticketItem.maxPerOrder} ใบ/ออเดอร์
+                            Max {ticketItem.maxPerOrder} per order
                           </span>
                         </div>
 
@@ -439,7 +439,7 @@ export function EventDetailView({
           {/* About Event / Rich Description */}
           <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-2xs">
             <h2 className="mb-4 text-lg font-bold text-[#2B212B] sm:text-xl">
-              รายละเอียดอีเวนต์ (About This Event)
+              About This Event
             </h2>
             <div className="prose prose-sm max-w-none text-xs leading-relaxed text-gray-700 sm:text-sm">
               <p className="whitespace-pre-line">{event.description}</p>
@@ -448,24 +448,24 @@ export function EventDetailView({
             {/* Highlights Grid */}
             <div className="mt-8 border-t border-gray-100 pt-6">
               <h3 className="mb-4 text-sm font-bold text-[#2B212B]">
-                สิ่งที่คุณจะได้รับจากงานนี้
+                What You'll Get
               </h3>
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
                   {
                     num: "01",
-                    title: "พบปะคอมมูนิตี้",
-                    desc: "สร้างคอนเนกชันกับเพื่อนร่วมวงการและผู้นำความคิด",
+                    title: "Meet the Community",
+                    desc: "Connect with peers and industry thought leaders",
                   },
                   {
                     num: "02",
-                    title: "ความรู้จากผู้เชี่ยวชาญ",
-                    desc: "เนื้อหาเจาะลึกที่นำไปปรับใช้ได้จริงในงานของคุณ",
+                    title: "Expert Insights",
+                    desc: "In-depth content you can apply to your work",
                   },
                   {
                     num: "03",
-                    title: "ของที่ระลึก & e-Certificate",
-                    desc: "เอกสารสรุปเนื้อหาและสิทธิพิเศษเฉพาะผู้เข้าร่วม",
+                    title: "Souvenirs & e-Certificate",
+                    desc: "Session materials and attendee-only perks",
                   },
                 ].map((item) => (
                   <div
@@ -484,7 +484,7 @@ export function EventDetailView({
           {/* Location & Map Section */}
           <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-2xs">
             <h2 className="mb-4 text-lg font-bold text-[#2B212B] sm:text-xl">
-              สถานที่จัดงาน (Location)
+              Location
             </h2>
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-[#ef5360]">
@@ -492,7 +492,7 @@ export function EventDetailView({
               </div>
               <div>
                 <h3 className="text-sm font-bold text-[#2B212B]">
-                  {event.venue.isOnline ? "กิจกรรมออนไลน์" : event.venue.name}
+                  {event.venue.isOnline ? "Online Event" : event.venue.name}
                 </h3>
                 <p className="mt-0.5 text-xs text-gray-600">{event.venue.address}</p>
                 <p className="mt-0.5 text-xs text-gray-500">
@@ -516,7 +516,7 @@ export function EventDetailView({
                   rel="noreferrer"
                   className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#ef5360] hover:underline"
                 >
-                  <span>เปิดดูใน Google Maps</span>
+                  <span>Open in Google Maps</span>
                   <ExternalLink size={12} />
                 </a>
               </div>
@@ -526,7 +526,7 @@ export function EventDetailView({
           {/* Organizer Card */}
           <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-2xs">
             <h2 className="mb-4 text-lg font-bold text-[#2B212B] sm:text-xl">
-              ข้อมูลผู้จัดงาน (Organized by)
+              Organized by
             </h2>
             <div className="flex items-center gap-4">
               <div className="relative h-16 w-16 overflow-hidden rounded-full border border-gray-200">
@@ -553,11 +553,11 @@ export function EventDetailView({
                 </p>
                 <div className="mt-2 flex items-center gap-3 text-[11px] text-gray-500">
                   <span className="flex items-center gap-1">
-                    <Calendar size={12} /> {event.organizer.eventCount} อีเวนต์
+                    <Calendar size={12} /> {event.organizer.eventCount} events
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1">
-                    <Users size={12} /> {event.organizer.followerCount} ผู้ติดตาม
+                    <Users size={12} /> {event.organizer.followerCount} followers
                   </span>
                 </div>
               </div>
@@ -569,7 +569,7 @@ export function EventDetailView({
         <aside className="h-fit space-y-4 lg:sticky lg:top-32">
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="border-b border-gray-100 pb-4">
-              <h3 className="text-base font-bold text-[#2B212B]">สรุปคำสั่งซื้อ</h3>
+              <h3 className="text-base font-bold text-[#2B212B]">Order Summary</h3>
               <p className="mt-0.5 text-xs text-gray-500">{event.title}</p>
             </div>
 
@@ -577,10 +577,10 @@ export function EventDetailView({
             <div className="py-4 space-y-2.5">
               {totalTickets === 0 ? (
                 <div className="py-6 text-center text-xs text-gray-400">
-                  ยังไม่ได้เลือกจำนวนบัตร
+                  No tickets selected
                   <br />
                   <span className="text-[11px] text-gray-400">
-                    กรุณากดเลือกจำนวนบัตรด้านซ้าย
+                    Please select tickets on the left
                   </span>
                 </div>
               ) : (
@@ -596,7 +596,7 @@ export function EventDetailView({
                         {t.name} x {qty}
                       </span>
                       <span className="font-semibold">
-                        {t.price === 0 ? "ฟรี" : `${money.format(t.price * qty)} VND`}
+                        {t.price === 0 ? "Free" : `${money.format(t.price * qty)} VND`}
                       </span>
                     </div>
                   );
@@ -607,23 +607,23 @@ export function EventDetailView({
             {/* Financial Details */}
             <div className="space-y-2 border-t border-gray-100 py-3.5 text-xs text-gray-600">
               <div className="flex justify-between">
-                <span>ยอดรวมบัตร (Subtotal)</span>
+                <span>Subtotal</span>
                 <span>{money.format(subtotal)} VND</span>
               </div>
               <div className="flex justify-between">
-                <span>ค่าธรรมเนียมแพลตฟอร์ม</span>
+                <span>Service fee</span>
                 <span>{money.format(serviceFee)} VND</span>
               </div>
             </div>
 
             {/* Total Price */}
             <div className="flex items-baseline justify-between border-t border-gray-200 pt-4">
-              <span className="text-sm font-bold text-[#2B212B]">ยอดชำระสุทธิ</span>
+              <span className="text-sm font-bold text-[#2B212B]">Total</span>
               <div className="text-right">
                 <span className="text-xl font-black text-[#ef5360]">
                   {money.format(grandTotal)} VND
                 </span>
-                <span className="block text-[10px] text-gray-400">รวม VAT แล้ว</span>
+                <span className="block text-[10px] text-gray-400">VAT included</span>
               </div>
             </div>
 
@@ -639,14 +639,14 @@ export function EventDetailView({
             >
               <Ticket size={17} />
               <span>
-                {event.status === "sold_out" ? "บัตรจำหน่ายหมดแล้ว" : "ดำเนินการชำระเงิน"}
+                {event.status === "sold_out" ? "Sold Out" : "Proceed to Checkout"}
               </span>
             </Link>
 
             {/* Guarantees */}
             <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-gray-500">
               <ShieldCheck size={14} className="text-emerald-500" />
-              <span>ชำระเงินปลอดภัย 100% ผ่าน TixFlow</span>
+              <span>100% secure payment via TixFlow</span>
             </div>
           </div>
         </aside>
@@ -658,17 +658,17 @@ export function EventDetailView({
           <div className="mb-6 flex items-end justify-between">
             <div>
               <h2 className="text-xl font-bold tracking-tight text-[#2B212B]">
-                อีเวนต์ที่คุณอาจสนใจ
+                You May Also Like
               </h2>
               <p className="mt-1 text-xs text-[#8E8E8E]">
-                อีเวนต์อื่นๆ ในหมวดหมู่ {event.category}
+                More events in {event.category}
               </p>
             </div>
             <Link
               href={`/events?category=${event.category}`}
               className="text-xs font-semibold text-[#ef5360] hover:underline"
             >
-              ดูทั้งหมด
+              View All
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
@@ -685,7 +685,7 @@ export function EventDetailView({
           <div className="container flex items-center justify-between gap-4 !px-0">
             <div>
               <div className="text-[11px] text-gray-500">
-                เลือกแล้ว {totalTickets} ใบ
+                {totalTickets} ticket{totalTickets === 1 ? "" : "s"} selected
               </div>
               <div className="text-base font-black text-[#ef5360]">
                 {money.format(grandTotal)} VND
@@ -695,7 +695,7 @@ export function EventDetailView({
               href={checkoutHref}
               className="inline-flex items-center gap-2 rounded-full bg-[#ef5360] px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#ec3746]"
             >
-              <span>ชำระเงิน</span>
+              <span>Checkout</span>
               <Ticket size={14} />
             </Link>
           </div>

@@ -11,17 +11,17 @@ export function PartnerSection() {
       <div className="mb-6 flex items-end justify-between sm:mb-8">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-[#2B212B] sm:text-2xl md:text-[26px]">
-            อีเวนต์จากพาร์ทเนอร์
+            Partner Organizers
           </h2>
           <p className="mt-1 text-xs text-[#8E8E8E] sm:text-sm">
-            ค้นพบอีเวนต์คุณภาพจากผู้จัดชั้นนำบน TixFlow
+            Discover top-tier experiences from verified event organizers on TixFlow
           </p>
         </div>
         <Link
           href="/events"
           className="group flex items-center gap-1.5 text-xs font-semibold text-[#ef5360] transition-colors hover:text-[#ec3746] sm:text-sm"
         >
-          <span>ดูทั้งหมด</span>
+          <span>View All</span>
           <ArrowRight
             size={16}
             className="transition-transform duration-200 group-hover:translate-x-1"
@@ -64,13 +64,13 @@ export function PartnerSection() {
             <div className="mt-1 flex items-center justify-center gap-2 text-[11px] text-[#8E8E8E]">
               <span className="flex items-center gap-0.5">
                 <Calendar size={11} />
-                {partner.eventCount} อีเวนต์
+                {partner.eventCount} Events
               </span>
             </div>
 
             {/* View Button */}
             <div className="mt-3.5 inline-flex w-full items-center justify-center rounded-full bg-gray-50 py-1.5 text-[11px] font-semibold text-gray-700 transition-colors group-hover:bg-[#ef5360] group-hover:text-white">
-              ดูอีเวนต์
+              View Events
             </div>
           </Link>
         ))}

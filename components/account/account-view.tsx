@@ -1,41 +1,39 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
-  CalendarDays,
-  Heart,
-  LayoutDashboard,
-  LogOut,
-  Settings,
   Ticket,
-  UserRound,
+  Heart,
+  Settings,
+  LogOut,
+  CalendarDays,
   MapPin,
   QrCode,
   X,
-  CheckCircle2,
-  Clock,
-  ExternalLink,
-  ChevronRight,
-  ShieldCheck,
+  UserRound,
+  LayoutDashboard,
 } from "lucide-react";
-import { EventGrid } from "@/components/events/event-grid";
-import type { MockTicket } from "@/lib/mock/tickets";
 import type { Event } from "@/lib/mock/events";
-import { getMyTickets } from "@/lib/mock-api/tickets";
+import {
+  type AccountTicket,
+  type TicketDto,
+  type TicketQrDto,
+  mapTicket,
+} from "@/lib/tickets";
 import { getEvents } from "@/lib/mock-api/events";
 import { useKeycloakAuth } from "@/components/auth-provider";
 import { useApi, type CurrentUser } from "@/lib/api";
 
 const menu = [
-  { key: "profile", label: "ข้อมูลส่วนตัว", href: "/account", Icon: UserRound },
-  { key: "tickets", label: "บัตรของฉัน", href: "/account/tickets", Icon: Ticket },
-  { key: "orders", label: "รายการสั่งซื้อ", href: "/account/orders", Icon: LayoutDashboard },
-  { key: "favorites", label: "อีเวนต์ที่ถูกใจ", href: "/account/favorites", Icon: Heart },
-  { key: "settings", label: "ตั้งค่าระบบ", href: "/account/settings", Icon: Settings },
+  { key: "profile", label: "Profile", href: "/account", Icon: UserRound },
+  { key: "tickets", label: "My Tickets", href: "/account/tickets", Icon: Ticket },
+  { key: "orders", label: "Order History", href: "/account/orders", Icon: LayoutDashboard },
+  { key: "favorites", label: "Saved Events", href: "/account/favorites", Icon: Heart },
+  { key: "settings", label: "Settings", href: "/account/settings", Icon: Settings },
 ];
 
-const money = new Intl.NumberFormat("vi-VN");
+const money = new Intl.NumberFormat("en-US");
 type AccountOrder = {
   id: string; orderNumber: string; status: string; totalAmount: number; currency: string;
   createdAtUtc: string; eventName: string; items: Array<{ quantity: number; ticketTypeNameSnapshot: string }>;
@@ -49,12 +47,13 @@ export function AccountView({ section = "profile" }: { section?: string }) {
   const [localUserId, setLocalUserId] = useState("");
   const [profileRole, setProfileRole] = useState<string>(auth.roles[0] ?? "");
   const [profileError, setProfileError] = useState<string>();
-  const [tickets, setTickets] = useState<MockTicket[]>([]);
+  const [tickets, setTickets] = useState<AccountTicket[]>([]);
   const [orders, setOrders] = useState<AccountOrder[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [saved, setSaved] = useState<string[]>([]);
   const [ticketFilter, setTicketFilter] = useState<"all" | "upcoming" | "past">("all");
-  const [selectedTicket, setSelectedTicket] = useState<MockTicket | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<AccountTicket | null>(null);
+  const [ticketQr, setTicketQr] = useState<{ id: string; image: string } | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const isCustomer = profileRole === "Customer" || auth.roles.includes("Customer");
   const visibleMenu = menu.filter((item) => isCustomer || item.key === "profile" || item.key === "settings");
@@ -71,14 +70,28 @@ export function AccountView({ section = "profile" }: { section?: string }) {
       }
     }).catch((cause) => {
       if (!controller.signal.aborted)
-        setProfileError(cause instanceof Error ? cause.message : "Không thể tải hồ sơ.");
+        setProfileError(cause instanceof Error ? cause.message : "Unable to load profile.");
     });
     if (isCustomer) {
-      void getMyTickets().then(setTickets);
+      const refreshTickets = async () => {
+        try {
+          const result = await api<{ data: TicketDto[] }>("/api/v1/tickets", controller.signal);
+          if (!controller.signal.aborted) {
+            const mapped = result.data.map(mapTicket);
+            setTickets(mapped);
+            setSelectedTicket((current) => current ? mapped.find((ticket) => ticket.id === current.id) ?? null : null);
+          }
+        } catch (cause) {
+          if (!controller.signal.aborted) setProfileError(cause instanceof Error ? cause.message : "Unable to load tickets.");
+        }
+      };
+      void refreshTickets();
+      const ticketTimer = window.setInterval(() => { if (document.visibilityState === "visible") void refreshTickets(); }, 5000);
+      controller.signal.addEventListener("abort", () => window.clearInterval(ticketTimer), { once: true });
       void api<{ data: AccountOrder[] }>("/api/v1/orders", controller.signal)
         .then((result) => { if (!controller.signal.aborted) setOrders(result.data); })
         .catch((cause) => {
-          if (!controller.signal.aborted) setProfileError(cause instanceof Error ? cause.message : "ไม่สามารถโหลดรายการสั่งซื้อได้");
+          if (!controller.signal.aborted) setProfileError(cause instanceof Error ? cause.message : "Unable to load order history.");
         });
       void getEvents({ limit: 100 }).then((result) => setEvents(result.events));
       setSaved(
@@ -91,6 +104,19 @@ export function AccountView({ section = "profile" }: { section?: string }) {
     }
     return () => controller.abort();
   }, [api, isCustomer]);
+
+  const selectedTicketId = selectedTicket?.id;
+  useEffect(() => {
+    setTicketQr(null);
+    if (!selectedTicketId) return;
+    const controller = new AbortController();
+    void api<{ data: TicketQrDto }>(`/api/v1/tickets/${selectedTicketId}/qr`, controller.signal)
+      .then((result) => { if (!controller.signal.aborted) setTicketQr({ id: selectedTicketId, image: result.data.qrImageDataUrl }); })
+      .catch((cause) => {
+        if (!controller.signal.aborted) setProfileError(cause instanceof Error ? cause.message : "Unable to load QR code.");
+      });
+    return () => controller.abort();
+  }, [api, selectedTicketId]);
 
   const favoriteEvents = events.filter((event) => saved.includes(event.slug));
   const activeMenuItem = visibleMenu.find((item) => item.key === section) ?? visibleMenu[0];
@@ -115,89 +141,95 @@ export function AccountView({ section = "profile" }: { section?: string }) {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-tr from-[#ef5360] to-[#f8a846] text-2xl font-black text-white shadow-md">
-                {name.charAt(0)}
+                {name.charAt(0) || "U"}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold text-[#2B212B] sm:text-2xl">{name}</h1>
+                  <h1 className="text-xl font-bold text-[#2B212B] sm:text-2xl">{name || "User"}</h1>
                   <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600">
-                    ยืนยันตัวตนแล้ว
+                    Verified Account
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-gray-500">{email}</p>
                 <p className="mt-1 text-[11px] text-[#8E8E8E]">
-                  สมาชิก TixFlow ตั้งแต่ ต.ค. 2026
+                  TixFlow member since Oct 2026
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              {isCustomer && <Link
+              {isCustomer && (
+                <Link
                   href="/events"
                   className="rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:border-[#ef5360] hover:text-[#ef5360]"
                 >
-                  ค้นหาอีเวนต์ใหม่
-                </Link>}
-              {profileRole === "Organizer" && <Link
+                  Discover Events
+                </Link>
+              )}
+              {profileRole === "Organizer" && (
+                <Link
                   href="/organizer"
                   className="rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:border-[#ef5360] hover:text-[#ef5360]"
                 >
-                  Organizer Dashboard
-                </Link>}
-              {profileRole === "Admin" && <Link
-                  href="/admin"
-                  className="rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:border-[#ef5360] hover:text-[#ef5360]"
-                >
-                  Admin Dashboard
-                </Link>}
+                  Organizer Console
+                </Link>
+              )}
             </div>
           </div>
         </div>
 
-        {/* 2 Columns: Left Menu Navigation + Right Content */}
+        {/* Layout Grid */}
         <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
-          {/* Left Navigation */}
-          <aside className="h-fit space-y-1 rounded-2xl border border-gray-100 bg-white p-3 shadow-2xs">
-            {visibleMenu.map(({ key, label, href, Icon }) => {
-              const isActive = section === key;
-              return (
-                <Link
-                  key={key}
-                  href={href}
-                  className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all ${
-                    isActive
-                      ? "bg-[#FFEFF0] text-[#ef5360] font-bold"
-                      : "text-gray-700 hover:bg-gray-50 hover:text-[#ef5360]"
-                  }`}
-                >
-                  <Icon size={16} />
-                  <span>{label}</span>
-                </Link>
-              );
-            })}
+          {/* Left Sidebar Menu */}
+          <aside className="h-fit space-y-1">
+            <div className="rounded-2xl border border-gray-100 bg-white p-2 shadow-2xs">
+              {visibleMenu.map((item) => {
+                const Icon = item.Icon;
+                const isActive = item.key === section;
+                return (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all ${
+                      isActive
+                        ? "bg-[#FFEFF0] text-[#ef5360]"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
+                  >
+                    <Icon size={16} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
 
-            <div className="pt-2 border-t border-gray-100">
+              <div className="my-1.5 border-t border-gray-100" />
+
               <button
+                type="button"
                 onClick={() => {
                   void auth.logout();
                 }}
                 className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
               >
                 <LogOut size={16} />
-                <span>ออกจากระบบ</span>
+                <span>Log Out</span>
               </button>
             </div>
           </aside>
 
           {/* Right Main Content */}
           <section className="min-w-0 rounded-2xl border border-gray-100 bg-white p-6 shadow-2xs sm:p-8">
-            {profileError && <p className="mb-4 rounded-xl bg-rose-50 p-3 text-xs text-rose-700" role="alert">{profileError}</p>}
+            {profileError && (
+              <p className="mb-4 rounded-xl bg-rose-50 p-3 text-xs text-rose-700" role="alert">
+                {profileError}
+              </p>
+            )}
             <div className="border-b border-gray-100 pb-4">
               <h2 className="text-lg font-bold text-[#2B212B] sm:text-xl">
                 {activeMenuItem.label}
               </h2>
               <p className="mt-0.5 text-xs text-[#8E8E8E]">
-                จัดการข้อมูลและกิจกรรมอีเวนต์ของคุณบน TixFlow
+                Manage your personal profile and event tickets on TixFlow
               </p>
             </div>
 
@@ -207,7 +239,7 @@ export function AccountView({ section = "profile" }: { section?: string }) {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-semibold text-gray-700">
-                      ชื่อ - นามสกุล
+                      Full Name
                     </label>
                     <input
                       value={name}
@@ -218,7 +250,7 @@ export function AccountView({ section = "profile" }: { section?: string }) {
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-700">
-                      อีเมล (ไม่สามารถแก้ไขได้)
+                      Email Address (Read-only)
                     </label>
                     <input
                       value={email}
@@ -229,7 +261,7 @@ export function AccountView({ section = "profile" }: { section?: string }) {
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-700">
-                      Vai trò
+                      Account Role
                     </label>
                     <input
                       value={profileRole}
@@ -240,7 +272,7 @@ export function AccountView({ section = "profile" }: { section?: string }) {
 
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-semibold text-gray-700">
-                      Mã người dùng nội bộ
+                      Internal User ID
                     </label>
                     <input
                       value={localUserId}
@@ -251,7 +283,7 @@ export function AccountView({ section = "profile" }: { section?: string }) {
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-700">
-                      เบอร์โทรศัพท์
+                      Phone Number
                     </label>
                     <input
                       defaultValue="+84 912 345 678"
@@ -266,11 +298,11 @@ export function AccountView({ section = "profile" }: { section?: string }) {
                     onClick={handleSaveProfile}
                     className="inline-flex items-center gap-2 rounded-full bg-[#ef5360] px-6 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#ec3746] active:scale-95"
                   >
-                    <span>บันทึกข้อมูลส่วนตัว</span>
+                    <span>Save Changes</span>
                   </button>
                   {saveSuccess && (
                     <span className="ml-3 text-xs font-semibold text-emerald-600">
-                      ✓ บันทึกข้อมูลสำเร็จแล้ว
+                      ✓ Profile updated successfully
                     </span>
                   )}
                 </div>
@@ -283,13 +315,13 @@ export function AccountView({ section = "profile" }: { section?: string }) {
                 {/* Filter Tabs */}
                 <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
                   {[
-                    { id: "all", label: "ทั้งหมด" },
-                    { id: "upcoming", label: "กำลังจะมาถึง" },
-                    { id: "past", label: "กิจกรรมที่ผ่านมา" },
+                    { id: "all", label: "All Tickets" },
+                    { id: "upcoming", label: "Upcoming" },
+                    { id: "past", label: "Past Events" },
                   ].map((tab) => (
                     <button
                       key={tab.id}
-                      onClick={() => setTicketFilter(tab.id as any)}
+                      onClick={() => setTicketFilter(tab.id as "all" | "upcoming" | "past")}
                       className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
                         ticketFilter === tab.id
                           ? "bg-[#ef5360] text-white shadow-2xs"
@@ -318,10 +350,10 @@ export function AccountView({ section = "profile" }: { section?: string }) {
                                   : "bg-gray-100 text-gray-600"
                               }`}
                             >
-                              {t.status === "upcoming" ? "กำลังจะมาถึง" : "สิ้นสุดแล้ว"}
+                              {t.status === "upcoming" ? "Upcoming" : "Past"}
                             </span>
                             <span className="text-[11px] font-bold text-gray-400">
-                              คำสั่งซื้อ #{t.orderId}
+                              Order #{t.orderId}
                             </span>
                           </div>
 
@@ -335,7 +367,11 @@ export function AccountView({ section = "profile" }: { section?: string }) {
                           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
                             <span className="flex items-center gap-1">
                               <CalendarDays size={13} className="text-[#ef5360]" />
-                              {new Date(t.eventDate).toLocaleDateString("th-TH")}
+                              {new Date(t.eventDate).toLocaleDateString("en-US", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })}
                             </span>
                             <span className="flex items-center gap-1">
                               <MapPin size={13} className="text-[#ef5360]" />
@@ -354,7 +390,7 @@ export function AccountView({ section = "profile" }: { section?: string }) {
                             className="inline-flex items-center gap-1.5 rounded-full bg-[#ef5360] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#ec3746] active:scale-95"
                           >
                             <QrCode size={14} />
-                            <span>ดู e-Ticket</span>
+                            <span>View e-Ticket</span>
                           </button>
                         </div>
                       </div>
@@ -362,7 +398,7 @@ export function AccountView({ section = "profile" }: { section?: string }) {
                   </div>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-gray-200 py-12 text-center text-xs text-gray-500">
-                    ไม่พบบัตรในหมวดหมู่นี้
+                    No tickets found in this section
                   </div>
                 )}
               </div>
@@ -374,11 +410,11 @@ export function AccountView({ section = "profile" }: { section?: string }) {
                 <table className="w-full min-w-[600px] text-left text-xs">
                   <thead className="border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400">
                     <tr>
-                      <th className="pb-3">รหัสคำสั่งซื้อ</th>
-                      <th className="pb-3">ชื่ออีเวนต์</th>
-                      <th className="pb-3">วันที่สั่งซื้อ</th>
-                      <th className="pb-3">ยอดชำระ</th>
-                      <th className="pb-3">สถานะ</th>
+                      <th className="pb-3">Order Number</th>
+                      <th className="pb-3">Event Name</th>
+                      <th className="pb-3">Date</th>
+                      <th className="pb-3">Total</th>
+                      <th className="pb-3">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -389,14 +425,18 @@ export function AccountView({ section = "profile" }: { section?: string }) {
                           {o.eventName}
                         </td>
                         <td className="py-3.5 text-gray-500">
-                          {new Date(o.createdAtUtc).toLocaleDateString("th-TH")}
+                          {new Date(o.createdAtUtc).toLocaleDateString("en-US", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
                         </td>
                         <td className="py-3.5 font-bold text-[#ef5360]">
                           {money.format(o.totalAmount)} {o.currency}
                         </td>
                         <td className="py-3.5">
                           <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600">
-                            {o.status === "Paid" ? "ชำระแล้ว" : o.status}
+                            {o.status === "Paid" ? "Paid" : o.status}
                           </span>
                         </td>
                       </tr>
@@ -438,7 +478,7 @@ export function AccountView({ section = "profile" }: { section?: string }) {
                   </div>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-gray-200 py-12 text-center text-xs text-gray-500">
-                    ยังไม่มีอีเวนต์ที่ถูกใจ กดไอคอนหัวใจที่อีเวนต์เพื่อบันทึกไว้ดูภายหลัง
+                    No saved events yet. Click the heart icon on any event to bookmark it for later.
                   </div>
                 )}
               </div>
@@ -449,16 +489,16 @@ export function AccountView({ section = "profile" }: { section?: string }) {
               <div className="mt-6 max-w-xl space-y-4 divide-y divide-gray-100">
                 {[
                   {
-                    title: "การแจ้งเตือนอีเวนต์ (Event Alerts)",
-                    desc: "รับข่าวสารและข้อความเตือนเมื่อใกล้ถึงวันจัดงานที่คุณซื้อบัตร",
+                    title: "Event Alerts",
+                    desc: "Receive reminders and updates before your registered events.",
                   },
                   {
-                    title: "อีเวนต์แนะนำตามความสนใจ (Recommendations)",
-                    desc: "แนะนำกิจกรรม คอนเสิร์ต และเวิร์กช็อปใหม่ๆ ทางอีเมล",
+                    title: "Personalized Recommendations",
+                    desc: "Get curated event picks and concerts matching your interests.",
                   },
                   {
-                    title: "จดหมายข่าว & โปรโมชันพิเศษ (Newsletter)",
-                    desc: "รับสิทธิพิเศษ ส่วนลดบัตร Early Bird และโค้ดส่วนลดจาก TixFlow",
+                    title: "Newsletter & Special Offers",
+                    desc: "Stay informed with Early Bird discounts and exclusive promotions.",
                   },
                 ].map((s, idx) => (
                   <label
@@ -511,25 +551,16 @@ export function AccountView({ section = "profile" }: { section?: string }) {
 
               {/* QR Code Container */}
               <div className="mx-auto my-5 flex h-48 w-48 flex-col items-center justify-center rounded-2xl border-2 border-gray-100 bg-white p-3 shadow-xs">
-                <span className="grid grid-cols-6 gap-1">
-                  {Array.from({ length: 36 }, (_, idx) => (
-                    <i
-                      key={idx}
-                      className={`h-5 w-5 rounded-xs ${
-                        (idx * 7 + 3) % 4 < 2 || idx % 5 === 0
-                          ? "bg-[#2B212B]"
-                          : "bg-transparent"
-                      }`}
-                    />
-                  ))}
-                </span>
+                {ticketQr?.id === selectedTicket.id && (
+                  <img src={ticketQr.image} alt="Ticket QR code" width={144} height={144} />
+                )}
                 <span className="mt-2 text-[10px] font-mono text-gray-400">
-                  {selectedTicket.orderId}
+                  {selectedTicket.ticketCode}
                 </span>
               </div>
 
               <div className="rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
-                แสดงบัตรนี้แก่เจ้าหน้าที่ ณ ประตูทางเข้าเพื่อทำการสแกน Check-in
+                Present this e-ticket to the staff at the entrance for check-in scanning.
               </div>
 
               <button
@@ -537,7 +568,7 @@ export function AccountView({ section = "profile" }: { section?: string }) {
                 onClick={() => setSelectedTicket(null)}
                 className="mt-5 w-full rounded-full bg-[#ef5360] py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#ec3746]"
               >
-                ปิดหน้าต่าง
+                Close
               </button>
             </div>
           </div>

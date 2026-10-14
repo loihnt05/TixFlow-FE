@@ -29,11 +29,11 @@ export function keycloakPublicConfig(): KeycloakPublicConfig {
   const redirectUri = httpUrl(process.env.NEXT_PUBLIC_OIDC_REDIRECT_URI);
   const postLogoutRedirectUri = httpUrl(process.env.NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI);
   if (!authority || !clientId || !redirectUri || !postLogoutRedirectUri)
-    throw new Error("Thiếu cấu hình Keycloak. Tạo .env.local theo README và khởi động lại ứng dụng.");
+    throw new Error("Missing Keycloak configuration. Set up .env.local per README and restart the application.");
 
   const authorityUrl = new URL(authority);
   const match = authorityUrl.pathname.match(/^(.*)\/realms\/([^/]+)$/);
-  if (!match) throw new Error("NEXT_PUBLIC_OIDC_AUTHORITY phải kết thúc bằng /realms/{realm}.");
+  if (!match) throw new Error("NEXT_PUBLIC_OIDC_AUTHORITY must end with /realms/{realm}.");
   authorityUrl.pathname = match[1] || "/";
   authorityUrl.search = "";
   authorityUrl.hash = "";

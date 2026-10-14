@@ -22,7 +22,7 @@ export default async function CheckoutPage({ searchParams }: CheckoutPageProps) 
   const quantity = typeof params.quantity === "string" ? Number.parseInt(params.quantity, 10) : 1;
   let sessionId = params.sessionId;
   let ticketId = ticket;
-  let inventoryMode = "GeneralAdmission";
+  let inventoryMode: "GeneralAdmission" | "ReservedSeating" = "GeneralAdmission";
   const seatIds = typeof params.seats === "string" ? params.seats.split(",").filter(Boolean) : [];
   const baseUrl = apiBaseUrl();
   if (baseUrl) {
@@ -38,15 +38,19 @@ export default async function CheckoutPage({ searchParams }: CheckoutPageProps) 
           ?? session?.ticketTypes?.[0];
         sessionId ??= session?.id;
         ticketId = backendTicket?.id ?? ticket;
-        inventoryMode = backendTicket?.inventoryMode ?? "GeneralAdmission";
+        inventoryMode = backendTicket?.inventoryMode === "ReservedSeating" ? "ReservedSeating" : "GeneralAdmission";
       }
     } catch {
       // Keep the page usable; submit will explain that a backend session is required.
     }
   }
+  const selectedTicket = event.ticketTypes.find((t) => t.id === ticket) ?? event.ticketTypes[0];
+  if (!selectedTicket) notFound();
+
   return (
     <CheckoutView
       event={event}
+      ticket={selectedTicket}
       ticketId={ticketId}
       quantity={Number.isFinite(quantity) ? quantity : 1}
       sessionId={sessionId}

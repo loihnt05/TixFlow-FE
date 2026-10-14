@@ -22,10 +22,10 @@ import { EventCard } from "./event-card";
 const pageSize = 15; // 3 rows of 5 on desktop
 
 const dateQuickFilters = [
-  { label: "ทั้งหมด", value: "all" },
-  { label: "วันนี้", value: "today" },
-  { label: "สัปดาห์นี้", value: "this_week" },
-  { label: "เดือนนี้", value: "this_month" },
+  { label: "All", value: "all" },
+  { label: "Today", value: "today" },
+  { label: "This Week", value: "this_week" },
+  { label: "This Month", value: "this_month" },
 ];
 
 export function EventDiscovery({
@@ -151,15 +151,15 @@ export function EventDiscovery({
         <div className="container py-4 sm:py-6">
           <nav className="mb-2 flex items-center gap-1.5 text-xs text-[#8E8E8E]">
             <Link href="/" className="hover:text-[#ef5360]">
-              หน้าแรก
+              Home
             </Link>
             <ChevronRight size={13} />
-            <span className="font-medium text-[#2B212B]">อีเวนต์ทั้งหมด</span>
+            <span className="font-medium text-[#2B212B]">All Events</span>
           </nav>
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div className="flex items-center gap-2.5">
               <h1 className="text-xl font-bold tracking-tight text-[#2B212B] sm:text-2xl md:text-3xl">
-                อีเวนต์ทั้งหมด
+                All Events
               </h1>
               <span className="rounded-full bg-[#FFEFF0] px-2.5 py-0.5 text-xs font-bold text-[#ef5360]">
                 {filteredEvents.length}
@@ -206,7 +206,7 @@ export function EventDiscovery({
                 setQuery(e.target.value);
                 setPage(1);
               }}
-              placeholder="ค้นหาชื่ออีเวนต์, สถานที่, หรือผู้จัด..."
+              placeholder="Search events, venues, or organizers..."
               className="w-full rounded-xl bg-gray-50 py-2.5 pl-10 pr-9 text-xs text-[#2B212B] outline-none transition-colors placeholder:text-[#8E8E8E] focus:bg-white focus:ring-2 focus:ring-[#ef5360]/20 sm:text-sm"
             />
             {query && (
@@ -229,7 +229,7 @@ export function EventDiscovery({
               className="relative flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-[#2B212B] transition-colors hover:border-[#ef5360] hover:text-[#ef5360] lg:hidden"
             >
               <SlidersHorizontal size={15} />
-              <span>ตัวกรอง</span>
+              <span>Filters</span>
               {activeFilterCount > 0 && (
                 <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ef5360] px-1 text-[10px] font-bold text-white">
                   {activeFilterCount}
@@ -248,11 +248,11 @@ export function EventDiscovery({
                 aria-label="Sort events"
                 className="w-full appearance-none rounded-xl border border-gray-200 bg-white py-2.5 pl-3 pr-8 text-xs font-semibold text-[#2B212B] outline-none transition-colors hover:border-gray-300 focus:border-[#ef5360] sm:text-sm"
               >
-                <option value="date_asc">วันที่: เร็วที่สุด</option>
-                <option value="popular">ยอดนิยมสูงสุด</option>
-                <option value="date_desc">วันที่: ล่าสุด</option>
-                <option value="price_asc">ราคา: ต่ำไปสูง</option>
-                <option value="price_desc">ราคา: สูงไปต่ำ</option>
+                <option value="date_asc">Date: Soonest</option>
+                <option value="popular">Most Popular</option>
+                <option value="date_desc">Date: Latest</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
               </select>
               <ChevronDown
                 size={14}
@@ -270,7 +270,7 @@ export function EventDiscovery({
               <div className="flex items-center justify-between border-b border-gray-100 pb-3">
                 <div className="flex items-center gap-2">
                   <SlidersHorizontal size={16} className="text-[#ef5360]" />
-                  <h2 className="text-sm font-bold text-[#2B212B]">ตัวกรอง</h2>
+                  <h2 className="text-sm font-bold text-[#2B212B]">Filters</h2>
                 </div>
                 {activeFilterCount > 0 && (
                   <button
@@ -278,19 +278,19 @@ export function EventDiscovery({
                     className="flex items-center gap-1 text-[11px] font-semibold text-[#ef5360] hover:underline"
                   >
                     <RotateCcw size={12} />
-                    <span>ล้างค่า</span>
+                    <span>Reset</span>
                   </button>
                 )}
               </div>
 
               {/* 1. Event Format */}
               <div className="border-b border-gray-100 py-4">
-                <h3 className="mb-2.5 text-xs font-bold text-[#2B212B]">รูปแบบงาน</h3>
+                <h3 className="mb-2.5 text-xs font-bold text-[#2B212B]">Event Format</h3>
                 <div className="space-y-1.5">
                   {[
-                    { id: "all", label: "ทั้งหมด" },
-                    { id: "onsite", label: "สถานที่จริง (On-site)" },
-                    { id: "online", label: "ออนไลน์ (Online)" },
+                    { id: "all", label: "All" },
+                    { id: "onsite", label: "On-site" },
+                    { id: "online", label: "Online" },
                   ].map((item) => (
                     <label
                       key={item.id}
@@ -314,12 +314,12 @@ export function EventDiscovery({
 
               {/* 2. Price Range */}
               <div className="border-b border-gray-100 py-4">
-                <h3 className="mb-2.5 text-xs font-bold text-[#2B212B]">ช่วงราคา</h3>
+                <h3 className="mb-2.5 text-xs font-bold text-[#2B212B]">Price</h3>
                 <div className="space-y-1.5">
                   {[
-                    { id: "all", label: "ทั้งหมด" },
-                    { id: "free", label: "ฟรี (Free)" },
-                    { id: "paid", label: "มีค่าใช้จ่าย (Paid)" },
+                    { id: "all", label: "All" },
+                    { id: "free", label: "Free" },
+                    { id: "paid", label: "Paid" },
                   ].map((item) => (
                     <label
                       key={item.id}
@@ -343,7 +343,7 @@ export function EventDiscovery({
 
               {/* 3. Location / City */}
               <div className="border-b border-gray-100 py-4">
-                <h3 className="mb-2.5 text-xs font-bold text-[#2B212B]">เมือง / สถานที่</h3>
+                <h3 className="mb-2.5 text-xs font-bold text-[#2B212B]">City / Location</h3>
                 <select
                   value={city}
                   onChange={(e) => {
@@ -352,7 +352,7 @@ export function EventDiscovery({
                   }}
                   className="w-full rounded-xl border border-gray-200 bg-white p-2 text-xs text-gray-700 outline-none focus:border-[#ef5360]"
                 >
-                  <option value="">ทุกสถานที่ ({cities.length})</option>
+                  <option value="">All Locations ({cities.length})</option>
                   {cities.map((c) => (
                     <option key={c} value={c}>
                       {c}
@@ -363,7 +363,7 @@ export function EventDiscovery({
 
               {/* 4. Category Checkboxes */}
               <div className="pt-4">
-                <h3 className="mb-2.5 text-xs font-bold text-[#2B212B]">หมวดหมู่</h3>
+                <h3 className="mb-2.5 text-xs font-bold text-[#2B212B]">Category</h3>
                 <div className="max-h-60 space-y-1 overflow-y-auto pr-1">
                   <label
                     className={`flex cursor-pointer items-center justify-between rounded-lg px-2 py-1.5 text-xs transition-colors ${
@@ -372,7 +372,7 @@ export function EventDiscovery({
                         : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >
-                    <span>ทุกหมวดหมู่</span>
+                    <span>All Categories</span>
                     <input
                       type="radio"
                       name="category"
@@ -419,10 +419,10 @@ export function EventDiscovery({
             {/* Active Filter Badges */}
             {activeFilterCount > 0 && (
               <div className="mb-4 flex flex-wrap items-center gap-2">
-                <span className="text-xs text-[#8E8E8E]">ตัวกรองที่เลือก:</span>
+                <span className="text-xs text-[#8E8E8E]">Active filters:</span>
                 {category && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#FFEFF0] px-3 py-1 text-xs font-semibold text-[#ef5360]">
-                    หมวดหมู่: {category}
+                    Category: {category}
                     <button onClick={() => setCategory("")}>
                       <X size={12} />
                     </button>
@@ -430,7 +430,7 @@ export function EventDiscovery({
                 )}
                 {city && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#FFEFF0] px-3 py-1 text-xs font-semibold text-[#ef5360]">
-                    เมือง: {city}
+                    City: {city}
                     <button onClick={() => setCity("")}>
                       <X size={12} />
                     </button>
@@ -438,7 +438,7 @@ export function EventDiscovery({
                 )}
                 {format !== "all" && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#FFEFF0] px-3 py-1 text-xs font-semibold text-[#ef5360]">
-                    รูปแบบ: {format}
+                    Format: {format}
                     <button onClick={() => setFormat("all")}>
                       <X size={12} />
                     </button>
@@ -446,7 +446,7 @@ export function EventDiscovery({
                 )}
                 {priceType !== "all" && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#FFEFF0] px-3 py-1 text-xs font-semibold text-[#ef5360]">
-                    ราคา: {priceType === "free" ? "ฟรี" : "มีค่าใช้จ่าย"}
+                    Price: {priceType === "free" ? "Free" : "Paid"}
                     <button onClick={() => setPriceType("all")}>
                       <X size={12} />
                     </button>
@@ -454,7 +454,7 @@ export function EventDiscovery({
                 )}
                 {dateRange !== "all" && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#FFEFF0] px-3 py-1 text-xs font-semibold text-[#ef5360]">
-                    ช่วงเวลา:{" "}
+                    Date:{" "}
                     {dateQuickFilters.find((d) => d.value === dateRange)?.label}
                     <button onClick={() => setDateRange("all")}>
                       <X size={12} />
@@ -465,7 +465,7 @@ export function EventDiscovery({
                   onClick={clearAllFilters}
                   className="text-xs font-semibold text-gray-500 hover:text-[#ef5360]"
                 >
-                  ล้างทั้งหมด
+                  Clear All
                 </button>
               </div>
             )}
@@ -484,17 +484,17 @@ export function EventDiscovery({
                   <Search size={28} />
                 </div>
                 <h3 className="mt-4 text-base font-bold text-[#2B212B]">
-                  ไม่พบอีเวนต์ที่คุณค้นหา
+                  No events found
                 </h3>
                 <p className="mt-1 max-w-sm text-xs text-[#8E8E8E]">
-                  ลองเปลี่ยนคำค้นหา หรือรีเซ็ตตัวกรองเพื่อค้นหาอีเวนต์อื่นๆ ในระบบ
+                  Try a different search or reset the filters to discover more events.
                 </p>
                 <button
                   onClick={clearAllFilters}
                   className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-[#ef5360] px-6 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#ec3746]"
                 >
                   <RotateCcw size={14} />
-                  <span>ล้างตัวกรองทั้งหมด</span>
+                  <span>Clear All Filters</span>
                 </button>
               </div>
             )}
@@ -544,7 +544,7 @@ export function EventDiscovery({
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal size={18} className="text-[#ef5360]" />
-                <h3 className="text-base font-bold text-[#2B212B]">ตัวกรองอีเวนต์</h3>
+                <h3 className="text-base font-bold text-[#2B212B]">Event Filters</h3>
               </div>
               <button
                 onClick={() => setMobileFilterOpen(false)}
@@ -558,7 +558,7 @@ export function EventDiscovery({
             <div className="space-y-5 py-4">
               {/* Date */}
               <div>
-                <h4 className="mb-2 text-xs font-bold text-[#2B212B]">ช่วงเวลา</h4>
+                <h4 className="mb-2 text-xs font-bold text-[#2B212B]">Date</h4>
                 <div className="grid grid-cols-2 gap-2">
                   {dateQuickFilters.map((df) => (
                     <button
@@ -578,10 +578,10 @@ export function EventDiscovery({
 
               {/* Format */}
               <div>
-                <h4 className="mb-2 text-xs font-bold text-[#2B212B]">รูปแบบ</h4>
+                <h4 className="mb-2 text-xs font-bold text-[#2B212B]">Format</h4>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: "all", label: "ทั้งหมด" },
+                    { id: "all", label: "All" },
                     { id: "onsite", label: "On-site" },
                     { id: "online", label: "Online" },
                   ].map((item) => (
@@ -602,12 +602,12 @@ export function EventDiscovery({
 
               {/* Price */}
               <div>
-                <h4 className="mb-2 text-xs font-bold text-[#2B212B]">ราคา</h4>
+                <h4 className="mb-2 text-xs font-bold text-[#2B212B]">Price</h4>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: "all", label: "ทั้งหมด" },
-                    { id: "free", label: "ฟรี" },
-                    { id: "paid", label: "มีค่าใช้จ่าย" },
+                    { id: "all", label: "All" },
+                    { id: "free", label: "Free" },
+                    { id: "paid", label: "Paid" },
                   ].map((item) => (
                     <button
                       key={item.id}
@@ -626,13 +626,13 @@ export function EventDiscovery({
 
               {/* Location */}
               <div>
-                <h4 className="mb-2 text-xs font-bold text-[#2B212B]">สถานที่</h4>
+                <h4 className="mb-2 text-xs font-bold text-[#2B212B]">Location</h4>
                 <select
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs text-gray-700"
                 >
-                  <option value="">ทุกสถานที่ ({cities.length})</option>
+                  <option value="">All Locations ({cities.length})</option>
                   {cities.map((c) => (
                     <option key={c} value={c}>
                       {c}
@@ -643,13 +643,13 @@ export function EventDiscovery({
 
               {/* Category */}
               <div>
-                <h4 className="mb-2 text-xs font-bold text-[#2B212B]">หมวดหมู่</h4>
+                <h4 className="mb-2 text-xs font-bold text-[#2B212B]">Category</h4>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs text-gray-700"
                 >
-                  <option value="">ทุกหมวดหมู่ ({eventCategories.length})</option>
+                  <option value="">All Categories ({eventCategories.length})</option>
                   {eventCategories.map((cat, idx) => (
                     <option key={`${cat.value}-${idx}`} value={cat.value}>
                       {cat.label}
@@ -665,13 +665,13 @@ export function EventDiscovery({
                 onClick={clearAllFilters}
                 className="flex-1 rounded-full border border-gray-200 py-3 text-xs font-semibold text-gray-700 hover:bg-gray-50"
               >
-                ล้างตัวกรอง
+                Clear Filters
               </button>
               <button
                 onClick={() => setMobileFilterOpen(false)}
                 className="flex-1 rounded-full bg-[#ef5360] py-3 text-xs font-bold text-white shadow-xs hover:bg-[#ec3746]"
               >
-                ดูผลลัพธ์ ({filteredEvents.length})
+                Show Results ({filteredEvents.length})
               </button>
             </div>
           </div>

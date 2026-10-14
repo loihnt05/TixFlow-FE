@@ -13,7 +13,7 @@ export default async function CheckoutSuccessPage({ searchParams }: SuccessPageP
   const params = await searchParams;
   const event = typeof params?.event === "string" ? await getEventBySlug(params.event) : undefined;
   return (
-    <Suspense fallback={<main className="container py-20 text-center">กำลังโหลดข้อมูลตั๋วของคุณ…</main>}>
+    <Suspense fallback={<main className="container py-20 text-center">Loading your ticket details…</main>}>
       <SuccessView event={event} orderId={params.orderId} />
     </Suspense>
   );

@@ -165,7 +165,7 @@ export function HeroCarousel({ events }: { events: Event[] }) {
                                 {/* Prominent CTA Button */}
                                 <div className="mt-1 sm:mt-0 flex items-center">
                                   <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ef5360] px-5 py-2 sm:px-6 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-xs transition-all duration-200 hover:bg-[#ec3746] hover:shadow-md hover:scale-105 active:scale-95">
-                                    <span>ซื้อบัตร</span>
+                                    <span>Get Tickets</span>
                                     <ArrowRight size={14} />
                                   </span>
                                 </div>

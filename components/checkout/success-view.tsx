@@ -9,10 +9,7 @@ import {
   Ticket,
   Calendar,
   MapPin,
-  QrCode,
-  Share2,
   ChevronRight,
-  ArrowRight,
 } from "lucide-react";
 import type { Event } from "@/lib/mock/events";
 import { useApi } from "@/lib/api";
@@ -29,7 +26,7 @@ interface SavedOrder {
   createdAt: string;
 }
 
-const money = new Intl.NumberFormat("vi-VN");
+const money = new Intl.NumberFormat("en-US");
 
 export function SuccessView({ event, orderId }: { event?: Event; orderId?: string }) {
   const api = useApi();
@@ -80,14 +77,33 @@ export function SuccessView({ event, orderId }: { event?: Event; orderId?: strin
           <div className={`mx-auto grid h-16 w-16 place-items-center rounded-full ${paid ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"}`}>
             {paid ? <Check size={32} /> : <Clock size={28} />}
           </div>
-          <h1 className="mt-5 text-2xl font-bold text-[#2B212B]">{paid ? "Thanh toán thành công" : "Đang xác nhận thanh toán"}</h1>
-          <p className="mt-2 text-sm text-gray-500">{paid ? "Đơn hàng đã được ghi nhận. Vé điện tử sẽ xuất hiện trong tài khoản sau bước phát hành vé." : "Trạng thái thanh toán đang được cập nhật từ nhà cung cấp."}</p>
+          <h1 className="mt-5 text-2xl font-bold text-[#2B212B]">
+            {paid ? "Payment Successful" : "Confirming Payment"}
+          </h1>
+          <p className="mt-2 text-sm text-gray-500">
+            {paid
+              ? "Your order has been recorded. E-tickets will appear in your account once ticket issuance completes."
+              : "Payment status is being updated with the payment provider."}
+          </p>
           <div className="mt-6 rounded-xl bg-gray-50 p-4 text-left text-sm">
-            <div className="flex justify-between"><span className="text-gray-500">Mã đơn</span><strong>{orderNumber ?? orderId}</strong></div>
-            {orderTotal !== undefined && <div className="mt-2 flex justify-between"><span className="text-gray-500">Tổng tiền</span><strong>{money.format(orderTotal)} VND</strong></div>}
-            <div className="mt-2 flex justify-between"><span className="text-gray-500">Trạng thái</span><strong>{orderStatus ?? "Đang tải…"}</strong></div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Order Number</span>
+              <strong>{orderNumber ?? orderId}</strong>
+            </div>
+            {orderTotal !== undefined && (
+              <div className="mt-2 flex justify-between">
+                <span className="text-gray-500">Total Amount</span>
+                <strong>{money.format(orderTotal)} VND</strong>
+              </div>
+            )}
+            <div className="mt-2 flex justify-between">
+              <span className="text-gray-500">Status</span>
+              <strong>{orderStatus ?? "Loading…"}</strong>
+            </div>
           </div>
-          <Link href="/account/orders" className="mt-6 inline-flex rounded-full bg-[#ef5360] px-6 py-3 text-sm font-bold text-white">Xem lịch sử đơn hàng</Link>
+          <Link href="/account/orders" className="mt-6 inline-flex rounded-full bg-[#ef5360] px-6 py-3 text-sm font-bold text-white hover:bg-[#ec3746]">
+            View Order History
+          </Link>
         </section>
       </main>
     );
@@ -105,15 +121,15 @@ export function SuccessView({ event, orderId }: { event?: Event; orderId?: strin
 
           <div className="mt-4">
             <span className="rounded-full bg-emerald-100/70 px-3 py-1 text-xs font-bold text-emerald-700">
-              สั่งซื้อเสร็จสมบูรณ์
+              Order Completed
             </span>
           </div>
 
           <h1 className="mt-3 text-2xl font-bold tracking-tight text-[#2B212B] sm:text-3xl">
-            คุณได้บัตรเรียบร้อยแล้ว!
+            You&apos;ve got your tickets!
           </h1>
           <p className="mt-1 text-xs text-gray-500 sm:text-sm">
-            ระบบได้จัดส่ง e-Ticket และใบเสร็จยืนยันไปยังอีเมลของคุณแล้ว
+            Your e-Ticket and confirmation receipt have been sent to your email.
           </p>
 
           {/* Digital Ticket Pass Card with Zipevent Tear Line */}
@@ -130,26 +146,32 @@ export function SuccessView({ event, orderId }: { event?: Event; orderId?: strin
                   </span>
                 </div>
                 <span className="rounded-full bg-[#FFEFF0] px-2.5 py-0.5 text-[10px] font-bold text-[#ef5360]">
-                  ยืนยันแล้ว
+                  Confirmed
                 </span>
               </div>
 
               <h2 className="mt-3 text-base font-bold text-[#2B212B] sm:text-lg">
-                {order?.eventTitle ?? event?.title ?? "Vietnam Future Forum 2026"}
+                {order?.eventTitle ?? event?.title ?? "AI & Data Summit Vietnam"}
               </h2>
 
               <div className="mt-2 space-y-1 text-xs text-gray-600">
                 <div className="flex items-center gap-1.5">
                   <Calendar size={13} className="text-[#ef5360]" />
                   <span>
-                    {event ? new Date(event.startDate).toLocaleDateString("th-TH") : "15 ต.ค. 2026"}{" "}
+                    {event
+                      ? new Date(event.startDate).toLocaleDateString("en-US", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "15 Oct 2026"}{" "}
                     (10:00 - 18:00)
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <MapPin size={13} className="text-[#ef5360]" />
                   <span>
-                    {event?.venue?.name ?? "Thiskyhall Sala"}, {event?.venue?.city ?? "Ho Chi Minh City"}
+                    {event?.venue?.name ?? "Hanoi Innovation Hub"}, {event?.venue?.city ?? "Hanoi"}
                   </span>
                 </div>
               </div>
@@ -166,25 +188,25 @@ export function SuccessView({ event, orderId }: { event?: Event; orderId?: strin
             <div className="p-5">
               <div className="grid grid-cols-2 gap-4 text-xs">
                 <div>
-                  <span className="text-gray-400">หมายเลขคำสั่งซื้อ</span>
+                  <span className="text-gray-400">Order Number</span>
                   <div className="mt-0.5 font-bold font-mono text-[#2B212B]">
                     {order?.id ?? "TF-20261011"}
                   </div>
                 </div>
                 <div>
-                  <span className="text-gray-400">ผู้ถือบัตร</span>
+                  <span className="text-gray-400">Ticket Holder</span>
                   <div className="mt-0.5 font-bold text-[#2B212B]">{order?.name ?? "Guest User"}</div>
                 </div>
                 <div>
-                  <span className="text-gray-400">ประเภทบัตร</span>
+                  <span className="text-gray-400">Ticket Type</span>
                   <div className="mt-0.5 font-bold text-[#2B212B]">
-                    {order?.ticket ?? "General Admission"} ({order?.quantity ?? 1} ใบ)
+                    {order?.ticket ?? "General Admission"} ({order?.quantity ?? 1} ticket{order?.quantity === 1 ? "" : "s"})
                   </div>
                 </div>
                 <div>
-                  <span className="text-gray-400">ยอดชำระ</span>
+                  <span className="text-gray-400">Total Paid</span>
                   <div className="mt-0.5 font-bold text-[#ef5360]">
-                    {order?.total ? `${money.format(order.total)} VND` : "ฟรี"}
+                    {order?.total ? `${money.format(order.total)} VND` : "Free"}
                   </div>
                 </div>
               </div>
@@ -207,7 +229,7 @@ export function SuccessView({ event, orderId }: { event?: Event; orderId?: strin
                   </span>
                 </div>
                 <span className="mt-2 text-[10px] text-gray-500 font-mono">
-                  แสดง QR Code นี้เพื่อ Check-in ณ จุดลงทะเบียนเข้างาน
+                  Present this QR Code for check-in at the event entrance
                 </span>
               </div>
             </div>
@@ -221,14 +243,14 @@ export function SuccessView({ event, orderId }: { event?: Event; orderId?: strin
               className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-5 py-2.5 text-xs font-semibold text-gray-700 shadow-2xs hover:bg-gray-50 active:scale-95 sm:text-sm"
             >
               <Download size={15} />
-              <span>ดาวน์โหลด / พิมพ์ตั๋ว</span>
+              <span>Download / Print Ticket</span>
             </button>
             <Link
               href="/account/tickets"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-[#ef5360] px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#ec3746] active:scale-95 sm:text-sm"
             >
               <Ticket size={15} />
-              <span>ดูตั๋วทั้งหมดในระบบ</span>
+              <span>View All My Tickets</span>
             </Link>
           </div>
 
@@ -237,7 +259,7 @@ export function SuccessView({ event, orderId }: { event?: Event; orderId?: strin
               href={eventHref}
               className="inline-flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-[#ef5360]"
             >
-              <span>กลับสู่หน้ารายละเอียดอีเวนต์</span>
+              <span>Return to Event Details</span>
               <ChevronRight size={14} />
             </Link>
           </div>

@@ -12,8 +12,8 @@ export function useApi() {
   const auth = useKeycloakAuth();
   return useCallback(async <T,>(path: string, optionsOrSignal?: RequestInit | AbortSignal): Promise<T> => {
     const baseUrl = apiBaseUrl();
-    if (!baseUrl) throw new Error("Chưa cấu hình địa chỉ API.");
-    if (!path.startsWith("/api/v1/")) throw new Error("Đường dẫn API không hợp lệ.");
+    if (!baseUrl) throw new Error("API base URL is not configured.");
+    if (!path.startsWith("/api/v1/")) throw new Error("Invalid API path.");
     const options = optionsOrSignal instanceof AbortSignal ? { signal: optionsOrSignal } : (optionsOrSignal ?? {});
     const signal = options.signal ?? undefined;
 
@@ -22,7 +22,7 @@ export function useApi() {
       try {
         token = await auth.getAccessToken(forceRefresh);
       } catch {
-        throw new ApiError(401, "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+        throw new ApiError(401, "Your session has expired. Please sign in again.");
       }
       try {
         return await fetch(`${baseUrl}${path}`, {
@@ -40,7 +40,7 @@ export function useApi() {
         });
       } catch (cause) {
         if (signal?.aborted) throw cause;
-        throw new ApiError(0, "Không thể kết nối tới API. Vui lòng thử lại.");
+        throw new ApiError(0, "Unable to connect to the API. Please try again.");
       }
     };
 
@@ -50,11 +50,11 @@ export function useApi() {
     if (!response.ok) {
       const problem = await response.json().catch(() => undefined) as { detail?: string } | undefined;
       const messages: Record<number, string> = {
-        401: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
-        403: "Tài khoản không có quyền truy cập hoặc đã bị vô hiệu hóa.",
-        409: "Email này trùng với hồ sơ hiện có. Liên hệ quản trị viên để xử lý tài khoản.",
+        401: "Your session has expired. Please sign in again.",
+        403: "Access forbidden or your account has been disabled.",
+        409: "This email conflicts with an existing profile. Please contact an administrator.",
       };
-      throw new ApiError(response.status, problem?.detail ?? messages[response.status] ?? "Không thể tải dữ liệu. Vui lòng thử lại.");
+      throw new ApiError(response.status, problem?.detail ?? messages[response.status] ?? "Failed to load data. Please try again.");
     }
     if (response.status === 204) return undefined as T;
     return response.json() as Promise<T>;

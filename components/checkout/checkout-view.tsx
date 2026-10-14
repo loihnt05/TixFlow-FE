@@ -1,72 +1,73 @@
 "use client";
 
-import Link from "next/link";
-import { useState, useEffect, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
-  CreditCard,
-  LockKeyhole,
-  Wallet,
-  Building2,
   Clock,
   ShieldCheck,
+  CreditCard,
+  Building2,
+  Wallet,
+  LockKeyhole,
+  CheckCircle2,
   ChevronRight,
   Ticket,
-  CheckCircle2,
-  AlertCircle,
 } from "lucide-react";
-import type { Event } from "@/lib/mock/events";
-import { useApi } from "@/lib/api";
+import type { Event, TicketType } from "@/lib/mock/events";
 import { useKeycloakAuth } from "@/components/auth-provider";
+import { useApi } from "@/lib/api";
 
-const money = new Intl.NumberFormat("vi-VN");
 type Payment = "card" | "bank" | "wallet";
+
+interface CheckoutViewProps {
+  event: Event;
+  ticket: TicketType;
+  quantity: number;
+  sessionId?: string;
+  ticketId?: string;
+  inventoryMode?: "GeneralAdmission" | "ReservedSeating";
+  seatIds?: string[];
+}
+
+const money = new Intl.NumberFormat("en-US");
 
 export function CheckoutView({
   event,
-  ticketId,
+  ticket,
   quantity,
   sessionId,
-  inventoryMode = "GeneralAdmission",
+  ticketId = ticket.id,
+  inventoryMode = ticket.inventoryMode ?? "GeneralAdmission",
   seatIds = [],
-}: {
-  event: Event;
-  ticketId: string;
-  quantity: number;
-  sessionId?: string;
-  inventoryMode?: string;
-  seatIds?: string[];
-}) {
+}: CheckoutViewProps) {
   const router = useRouter();
-  const api = useApi();
   const auth = useKeycloakAuth();
+  const api = useApi();
   const [payment, setPayment] = useState<Payment>("card");
   const [mockOutcome, setMockOutcome] = useState<"Succeeded" | "Failed" | "Timeout">("Succeeded");
-  const [timeLeft, setTimeLeft] = useState(900); // 15:00 countdown timer
   const [submitting, setSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string>();
   const [serverTotal, setServerTotal] = useState<number>();
 
-  // Find ticket
-  const ticket = event.ticketTypes.find((item) => item.id === ticketId) ?? event.ticketTypes[0];
-  const safeQuantity = Math.max(1, Math.min(quantity || 1, ticket.maxPerOrder));
-  const subtotal = ticket.price * safeQuantity;
-  const serviceFee = 0;
-  const grandTotal = subtotal + serviceFee;
-  const displayedTotal = serverTotal ?? grandTotal;
+  const [timeLeft, setTimeLeft] = useState(600);
 
-  // Countdown timer
   useEffect(() => {
-    if (timeLeft <= 0) return;
-    const interval = setInterval(() => {
+    const timer = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
-    return () => clearInterval(interval);
-  }, [timeLeft]);
+    return () => clearInterval(timer);
+  }, []);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
-  const timeFormatted = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  const timeFormatted = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+
+  const safeQuantity = quantity > 0 ? quantity : 1;
+  const subtotal = ticket.price * safeQuantity;
+  const serviceFee = subtotal > 0 ? 0 : 0;
+  const total = subtotal + serviceFee;
+  const displayedTotal = serverTotal ?? total;
 
   async function completeOrder(formEvent: FormEvent<HTMLFormElement>) {
     formEvent.preventDefault();
@@ -75,7 +76,7 @@ export function CheckoutView({
       return;
     }
     if (!sessionId || !/^[0-9a-f-]{36}$/i.test(sessionId) || !/^[0-9a-f-]{36}$/i.test(ticketId)) {
-      setCheckoutError("Chưa có mã suất diễn/vé từ danh mục backend. Hãy mở checkout từ một Hold hợp lệ.");
+      setCheckoutError("Session or ticket ID is missing. Please start checkout from a valid ticket selection.");
       return;
     }
     setSubmitting(true);
@@ -112,7 +113,7 @@ export function CheckoutView({
         if (current.data.status !== "Pending") {
           if (current.data.status !== "Succeeded") {
             sessionStorage.removeItem(`tixflow-payment-key-${order.id}`);
-            throw new Error(current.data.failureReason ?? "Thanh toán chưa thành công.");
+            throw new Error(current.data.failureReason ?? "Payment was not successful.");
           }
           router.push(`/checkout/success?event=${event.slug}&orderId=${order.id}`);
           return;
@@ -121,7 +122,7 @@ export function CheckoutView({
       }
       router.push(`/checkout/success?event=${event.slug}&orderId=${order.id}`);
     } catch (cause) {
-      setCheckoutError(cause instanceof Error ? cause.message : "Không thể hoàn tất thanh toán.");
+      setCheckoutError(cause instanceof Error ? cause.message : "Unable to complete payment.");
     } finally {
       setSubmitting(false);
     }
@@ -133,36 +134,41 @@ export function CheckoutView({
         {/* Breadcrumb */}
         <nav className="mb-4 flex items-center gap-1.5 text-xs text-gray-500">
           <Link href="/" className="hover:text-[#ef5360]">
-            หน้าแรก
+            Home
           </Link>
           <ChevronRight size={13} />
           <Link href={`/events/${event.slug}`} className="hover:text-[#ef5360]">
             {event.title}
           </Link>
           <ChevronRight size={13} />
-          <span className="font-semibold text-[#2B212B]">ชำระเงิน</span>
+          <span className="font-semibold text-[#2B212B]">Checkout</span>
         </nav>
 
         {/* Header with Countdown Timer */}
         <div className="mb-6 flex flex-col justify-between gap-4 rounded-2xl border border-red-100 bg-[#FFEFF0]/60 p-4 sm:flex-row sm:items-center sm:p-5">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-[#2B212B] sm:text-2xl">
-              ดำเนินการสั่งซื้อและชำระเงิน
+              Complete Order &amp; Payment
             </h1>
             <p className="mt-0.5 text-xs text-gray-600">
-              กรุณากรอกข้อมูลและยืนยันการชำระเงินภายในเวลาที่กำหนด
+              Please enter your details and complete payment before your reservation expires.
             </p>
           </div>
           <div className="flex items-center gap-2 self-start rounded-full bg-white px-4 py-2 shadow-2xs sm:self-center">
             <Clock size={16} className="text-[#ef5360] animate-pulse" />
-            <span className="text-xs text-gray-500">เวลาที่เหลือ:</span>
-            <span className="font-mono text-sm font-bold text-[#ef5360]">{timeFormatted} นาที</span>
+            <span className="text-xs text-gray-500">Time remaining:</span>
+            <span className="font-mono text-sm font-bold text-[#ef5360]">{timeFormatted} min</span>
           </div>
         </div>
 
         {/* Main Checkout Form */}
         <form onSubmit={completeOrder} className="grid gap-8 lg:grid-cols-[1fr_360px]">
-          {checkoutError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 lg:col-span-2">{checkoutError}</p>}
+          {checkoutError && (
+            <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 lg:col-span-2">
+              {checkoutError}
+            </p>
+          )}
+
           {/* Left Form: Attendee Info & Payment */}
           <div className="space-y-6">
             {/* 1. Attendee Information */}
@@ -171,26 +177,26 @@ export function CheckoutView({
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#ef5360] text-xs font-bold text-white">
                   1
                 </span>
-                <h2 className="text-base font-bold text-[#2B212B]">ข้อมูลผู้สั่งซื้อ / ผู้รับบัตร</h2>
+                <h2 className="text-base font-bold text-[#2B212B]">Attendee Information</h2>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-gray-700">
-                    ชื่อ - นามสกุล (Full Name) *
+                    Full Name *
                   </label>
                   <input
                     required
                     name="name"
                     defaultValue="Nguyen Van Minh"
-                    placeholder="ระบุชื่อจริงและนามสกุล"
+                    placeholder="Enter attendee full name"
                     className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#2B212B] outline-none transition-colors focus:border-[#ef5360] focus:ring-2 focus:ring-[#ef5360]/20 sm:text-sm"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700">
-                    อีเมล (Email) *
+                    Email Address *
                   </label>
                   <input
                     required
@@ -201,13 +207,13 @@ export function CheckoutView({
                     className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#2B212B] outline-none transition-colors focus:border-[#ef5360] focus:ring-2 focus:ring-[#ef5360]/20 sm:text-sm"
                   />
                   <span className="mt-1 block text-[10px] text-gray-400">
-                    e-Ticket และใบเสร็จจะถูกจัดส่งไปยังอีเมลนี้
+                    e-Tickets and receipts will be delivered to this email.
                   </span>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700">
-                    เบอร์โทรศัพท์ (Phone Number) *
+                    Phone Number *
                   </label>
                   <input
                     required
@@ -227,27 +233,27 @@ export function CheckoutView({
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#ef5360] text-xs font-bold text-white">
                   2
                 </span>
-                <h2 className="text-base font-bold text-[#2B212B]">เลือกวิธีการชำระเงิน</h2>
+                <h2 className="text-base font-bold text-[#2B212B]">Select Payment Method</h2>
               </div>
 
               <div className="space-y-3">
                 {[
                   {
                     id: "card",
-                    name: "บัตรเครดิต / บัตรเดบิต",
-                    desc: "Visa, Mastercard, JCB (ไม่มีค่าธรรมเนียมรูดบัตร)",
+                    name: "Credit / Debit Card",
+                    desc: "Visa, Mastercard, JCB (No extra processing fees)",
                     icon: CreditCard,
                   },
                   {
                     id: "bank",
-                    name: "โอนผ่านธนาคาร / PromptPay / QR Code",
-                    desc: "สแกน QR จ่ายสะดวก ทุกธนาคาร",
+                    name: "Bank Transfer / PromptPay / QR Code",
+                    desc: "Scan QR code with any major banking app",
                     icon: Building2,
                   },
                   {
                     id: "wallet",
                     name: "e-Wallet (MoMo, ZaloPay, TrueMoney)",
-                    desc: "ชำระผ่านแอปกระเป๋าเงินออนไลน์",
+                    desc: "Pay conveniently via your mobile wallet",
                     icon: Wallet,
                   },
                 ].map((pm) => {
@@ -288,18 +294,22 @@ export function CheckoutView({
               </div>
 
               <label className="mt-4 block text-xs font-semibold text-gray-700">
-                Kết quả mô phỏng (sandbox)
-                <select value={mockOutcome} onChange={(event) => setMockOutcome(event.target.value as typeof mockOutcome)} className="mt-1.5 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs">
-                  <option value="Succeeded">Thành công</option>
-                  <option value="Failed">Từ chối thanh toán</option>
-                  <option value="Timeout">Timeout, thử lại được</option>
+                Payment Simulation (Sandbox)
+                <select
+                  value={mockOutcome}
+                  onChange={(event) => setMockOutcome(event.target.value as typeof mockOutcome)}
+                  className="mt-1.5 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs"
+                >
+                  <option value="Succeeded">Payment Succeeded</option>
+                  <option value="Failed">Payment Declined</option>
+                  <option value="Timeout">Timeout, can retry</option>
                 </select>
               </label>
 
               <div className="mt-4 flex items-center gap-2 rounded-xl bg-gray-50 p-3 text-[11px] text-gray-500">
                 <LockKeyhole size={14} className="text-gray-400 shrink-0" />
                 <span>
-                  Mock Sandbox — không thu tiền thật. Vé điện tử sẽ được phát hành ở bước tiếp theo sau thanh toán.
+                  Mock Sandbox — no actual charges are incurred. Digital tickets will be issued in your account upon order completion.
                 </span>
               </div>
             </section>
@@ -308,7 +318,7 @@ export function CheckoutView({
           {/* Right Sticky Order Summary */}
           <aside className="h-fit space-y-4 lg:sticky lg:top-24">
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
-              <h3 className="text-base font-bold text-[#2B212B]">สรุปรายการสั่งซื้อ</h3>
+              <h3 className="text-base font-bold text-[#2B212B]">Order Summary</h3>
 
               {/* Event Card preview */}
               <div className="mt-4 flex gap-3 border-b border-gray-100 pb-4">
@@ -333,23 +343,23 @@ export function CheckoutView({
               {/* Price Details */}
               <div className="space-y-2.5 py-4 text-xs text-gray-600">
                 <div className="flex justify-between">
-                  <span>ราคาบัตร ({safeQuantity} ใบ)</span>
+                  <span>Tickets ({safeQuantity} ticket{safeQuantity === 1 ? "" : "s"})</span>
                   <span>{money.format(subtotal)} VND</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>ค่าธรรมเนียมบริการ</span>
+                  <span>Service Fee</span>
                   <span>{money.format(serviceFee)} VND</span>
                 </div>
               </div>
 
               {/* Grand Total */}
               <div className="flex items-baseline justify-between border-t border-gray-200 pt-4">
-                <span className="text-sm font-bold text-[#2B212B]">ยอดชำระสุทธิ</span>
+                <span className="text-sm font-bold text-[#2B212B]">Total Amount</span>
                 <div className="text-right">
-                <span className="text-xl font-black text-[#ef5360]">
+                  <span className="text-xl font-black text-[#ef5360]">
                     {money.format(displayedTotal)} VND
                   </span>
-                  <span className="block text-[10px] text-gray-400">รวมภาษีมูลค่าเพิ่มแล้ว</span>
+                  <span className="block text-[10px] text-gray-400">VAT included</span>
                 </div>
               </div>
 
@@ -360,21 +370,23 @@ export function CheckoutView({
                 className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-[#ef5360] py-3.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#ec3746] hover:shadow-lg active:scale-98 sm:text-sm"
               >
                 <LockKeyhole size={16} />
-                <span>{submitting ? "Đang xử lý…" : `Xác nhận · ${money.format(displayedTotal)} VND`}</span>
+                <span>
+                  {submitting ? "Processing…" : `Confirm & Pay · ${money.format(displayedTotal)} VND`}
+                </span>
               </button>
 
               <p className="mt-4 text-center text-[11px] text-gray-400">
-                เมื่อคลิกยืนยัน แสดงว่าคุณยอมรับเงื่อนไขและข้อกำหนดการใช้งานของ TixFlow
+                By confirming, you agree to TixFlow Terms of Service and Event Admission Rules.
               </p>
             </div>
 
             <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-2xs">
               <div className="flex items-center gap-2 text-xs font-semibold text-gray-700">
                 <ShieldCheck size={16} className="text-emerald-500" />
-                <span>การรับประกันความปลอดภัย</span>
+                <span>Security Guarantee</span>
               </div>
               <p className="mt-1 text-[11px] text-gray-500">
-                ข้อมูลของคุณได้รับการเข้ารหัส SSL มาตรฐานสากล รับประกันความปลอดภัยสูงสุด
+                All transactions are encrypted with 256-bit bank-grade SSL security.
               </p>
             </div>
           </aside>

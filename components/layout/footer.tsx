@@ -174,23 +174,23 @@ export function Footer() {
               <h3 className="text-sm font-bold uppercase tracking-wider text-white mb-4">Articles</h3>
               <ul className="space-y-2.5 text-xs text-gray-400">
                 <li>
-                  <Link href="/events?section=articles" className="hover:text-white transition-colors">
+                  <Link href="/articles" className="hover:text-white transition-colors">
                     Latest Stories
                   </Link>
                 </li>
                 <li>
-                  <Link href="/events?section=guidelines" className="hover:text-white transition-colors">
-                    Organizer Guide
+                  <Link href="/articles?tab=organizer" className="hover:text-white transition-colors">
+                    Organizer Guides
                   </Link>
                 </li>
                 <li>
-                  <Link href="/events?filter=marketing" className="hover:text-white transition-colors">
+                  <Link href="/articles?category=Marketing" className="hover:text-white transition-colors">
                     Event Marketing
                   </Link>
                 </li>
                 <li>
-                  <Link href="/events?filter=insights" className="hover:text-white transition-colors">
-                    Industry Insights
+                  <Link href="/articles?category=Technology" className="hover:text-white transition-colors">
+                    Tech &amp; Insights
                   </Link>
                 </li>
               </ul>

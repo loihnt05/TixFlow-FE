@@ -38,20 +38,20 @@ export default async function HomePage() {
           <div>
             <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#ef5360]">
               <Sparkles size={14} />
-              <span>แนะนำสำหรับคุณ</span>
+              <span>Recommended for You</span>
             </div>
             <h2 className="text-xl font-bold tracking-tight text-[#2B212B] sm:text-2xl md:text-[26px]">
-              ลงทะเบียนและซื้อบัตร
+              Registration &amp; Tickets
             </h2>
             <p className="mt-1 text-xs text-[#8E8E8E] sm:text-sm">
-              จองบัตรล่วงหน้าสำหรับอีเวนต์คุณภาพที่คุณไม่อยากพลาด
+              Book advance tickets for top-rated events you don&apos;t want to miss
             </p>
           </div>
           <Link
             href="/events"
             className="group flex items-center gap-1.5 text-xs font-semibold text-[#ef5360] transition-colors hover:text-[#ec3746] sm:text-sm"
           >
-            <span>ดูทั้งหมด</span>
+            <span>View All</span>
             <ArrowRight
               size={16}
               className="transition-transform duration-200 group-hover:translate-x-1"
@@ -68,7 +68,7 @@ export default async function HomePage() {
             href="/events"
             className="inline-flex items-center gap-2 rounded-full border-2 border-[#ef5360] bg-white px-8 py-2.5 text-xs font-bold text-[#ef5360] shadow-xs transition-all duration-200 hover:bg-[#ef5360] hover:text-white hover:shadow-md active:scale-95 sm:text-sm"
           >
-            <span>ดูอีเวนต์เพิ่มเติมทั้งหมด</span>
+            <span>Explore All Events</span>
             <ArrowRight size={16} />
           </Link>
         </div>
@@ -84,28 +84,28 @@ export default async function HomePage() {
           <div className="relative z-10 flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
             <div className="max-w-2xl">
               <span className="inline-block rounded-full bg-[#ef5360]/20 px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[#ff808c]">
-                สำหรับผู้จัดงานอีเวนต์
+                For Event Organizers
               </span>
               <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-                สร้างอีเวนต์ของคุณกับ <span className="text-[#ef5360]">TixFlow</span>
+                Create Your Event with <span className="text-[#ef5360]">TixFlow</span>
               </h2>
               <p className="mt-2 text-xs leading-relaxed text-gray-300 sm:text-sm">
-                ระบบจัดการอีเวนต์และจำหน่ายบัตรออนไลน์ครบวงจร รวดเร็ว ปลอดภัย พร้อมเครื่องมือช่วยดันยอดขายและดูแลผู้เข้าร่วมงานอย่างไร้รอยต่อ
+                End-to-end event management and ticketing platform. Fast, secure, with real-time analytics and seamless attendee check-in.
               </p>
 
               {/* Feature Badges */}
               <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-gray-300 sm:text-sm">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle size={16} className="text-[#ef5360]" />
-                  <span>เปิดขายบัตรได้ใน 5 นาที</span>
+                  <span>Launch ticket sales in 5 minutes</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck size={16} className="text-[#ef5360]" />
-                  <span>ระบบชำระเงินปลอดภัย 100%</span>
+                  <span>100% Secure Payments</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <BarChart3 size={16} className="text-[#ef5360]" />
-                  <span>แดชบอร์ดสถิติแบบ Real-time</span>
+                  <span>Real-time Analytics Dashboard</span>
                 </div>
               </div>
             </div>
@@ -116,13 +116,13 @@ export default async function HomePage() {
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[#ef5360] px-7 py-3 text-xs font-bold text-white shadow-md transition-all duration-200 hover:bg-[#ec3746] hover:shadow-lg active:scale-95 sm:text-sm"
               >
                 <PlusCircle size={18} />
-                <span>สร้างอีเวนต์เลย</span>
+                <span>Create Event Now</span>
               </Link>
               <Link
                 href="/articles"
                 className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-6 py-3 text-xs font-semibold text-white backdrop-blur-xs transition-colors hover:bg-white/20 sm:text-sm"
               >
-                ศึกษาบริการเพิ่มเติม
+                Learn More
               </Link>
             </div>
           </div>

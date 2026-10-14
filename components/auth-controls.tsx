@@ -9,7 +9,7 @@ export function SignInButton({ returnTo }: { returnTo?: string }) {
   const pathname = usePathname();
   return <button type="button" disabled={!auth.ready}
     onClick={() => void auth.login(returnTo ?? pathname)}>
-    Đăng nhập / Đăng ký
+    Sign in / Sign up
   </button>;
 }
 
@@ -24,14 +24,14 @@ export function AuthError() {
 
 export function SiteHeader() {
   const auth = useKeycloakAuth();
-  const displayName = String(auth.tokenParsed?.name ?? auth.tokenParsed?.preferred_username ?? "Tài khoản");
+  const displayName = String(auth.tokenParsed?.name ?? auth.tokenParsed?.preferred_username ?? "Account");
   return <header className="site-header">
-    <nav aria-label="Điều hướng chính">
+    <nav aria-label="Main navigation">
       <Link href="/" className="brand">TixFlow</Link>
       <div className="nav-links">
         {auth.authenticated ? <>
           <Link href="/account">{displayName}</Link>
-          <button type="button" className="secondary" onClick={() => void auth.logout()}>Đăng xuất</button>
+          <button type="button" className="secondary" onClick={() => void auth.logout()}>Sign out</button>
         </> : <SignInButton returnTo="/account" />}
       </div>
     </nav>

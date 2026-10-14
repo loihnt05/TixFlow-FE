@@ -158,10 +158,10 @@ export function CategoriesSection() {
             <span>Explore More Events</span>
           </div>
           <h2 className="text-xl font-bold tracking-tight text-[#2B212B] sm:text-2xl md:text-[26px]">
-            หมวดหมู่อีเวนต์ยอดนิยม
+            Popular Categories
           </h2>
           <p className="mt-1 text-xs text-[#8E8E8E] sm:text-sm">
-            เลือกสำรวจอีเวนต์ตามประเภทที่คุณสนใจ มีให้เลือกหลากหลายกว่า 18 หมวดหมู่
+            Explore curated events across more than 18 diverse categories
           </p>
         </div>
 
@@ -169,7 +169,7 @@ export function CategoriesSection() {
           href="/events"
           className="group inline-flex items-center gap-1.5 text-xs font-semibold text-[#ef5360] transition-colors hover:text-[#ec3746] sm:text-sm"
         >
-          <span>ดูอีเวนต์ทั้งหมด</span>
+          <span>View All Categories</span>
           <ArrowRight
             size={16}
             className="transition-transform duration-200 group-hover:translate-x-1"
@@ -211,7 +211,7 @@ export function CategoriesSection() {
                 {cat.name}
               </span>
               <span className="text-[10px] sm:text-[11px] font-normal text-white/70">
-                {cat.eventCount} อีเวนต์
+                {cat.eventCount} Events
               </span>
             </div>
           </Link>
@@ -228,12 +228,12 @@ export function CategoriesSection() {
           >
             {expanded ? (
               <>
-                <span>ย่อหมวดหมู่</span>
+                <span>Show Less</span>
                 <ChevronUp size={16} />
               </>
             ) : (
               <>
-                <span>ดูหมวดหมู่ทั้งหมด ({categoryTiles.length})</span>
+                <span>Show All Categories ({categoryTiles.length})</span>
                 <ChevronDown size={16} />
               </>
             )}

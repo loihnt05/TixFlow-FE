@@ -2,162 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Calendar, Clock, BookOpen, User } from "lucide-react";
-
-interface Author {
-  name: string;
-  avatar: string;
-  role: string;
-}
-
-interface Article {
-  id: string;
-  slug: string;
-  title: string;
-  excerpt: string;
-  coverImage: string;
-  category: string;
-  tab: "latest" | "organizer";
-  author: Author;
-  date: string;
-  readTime: string;
-}
-
-const mockArticles: Article[] = [
-  {
-    id: "art-1",
-    slug: "top-exhibitions-bangkok-2026",
-    title: "10 นิทรรศการและอาร์ตแกลเลอรีในกรุงเทพฯ ที่ไม่ควรพลาดช่วงปลายปี 2026",
-    excerpt: "รวมพิกัดงานศิลปะ เสพงานอาร์ต ถ่ายรูปสวย พร้อมตารางเวลาเดินทางและวิธีการจองบัตรล่วงหน้าฉบับอัปเดตล่าสุด",
-    coverImage: "https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1000&q=80",
-    category: "Art & Culture",
-    tab: "latest",
-    author: {
-      name: "Nattha Karn",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
-      role: "Culture Editor",
-    },
-    date: "10 ต.ค. 2026",
-    readTime: "5 นาที",
-  },
-  {
-    id: "art-2",
-    slug: "music-festival-guide-packing",
-    title: "เตรียมตัวไปมิวสิคเฟสติวัลครั้งแรก Checklist อุปกรณ์สำคัญที่ต้องมี",
-    excerpt: "คู่มือเอาตัวรอดสำหรับสายเฟส จัดกระเป๋าให้พร้อมเพื่อประสบการณ์ที่สนุกที่สุดตลอดทั้งคืน",
-    coverImage: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=600&q=80",
-    category: "Festival",
-    tab: "latest",
-    author: {
-      name: "TixFlow Music Team",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
-      role: "Music Specialist",
-    },
-    date: "08 ต.ค. 2026",
-    readTime: "4 นาที",
-  },
-  {
-    id: "art-3",
-    slug: "indie-coffee-fair-highlight",
-    title: "เปิดไฮไลต์ The Coffee & Culture Fair ชิมกาแฟสเปเชียลตี้จากทั่วเอเชีย",
-    excerpt: "พบปะบาริสต้าชั้นนำและเวิร์กช็อป Cupping กาแฟแบบเจาะลึกตลอดสุดสัปดาห์ใจกลางเมือง",
-    coverImage: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=600&q=80",
-    category: "Food & Drink",
-    tab: "latest",
-    author: {
-      name: "Sira Wong",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
-      role: "Lifestyle Writer",
-    },
-    date: "05 ต.ค. 2026",
-    readTime: "3 นาที",
-  },
-  {
-    id: "art-4",
-    slug: "tech-trends-southeast-asia-2026",
-    title: "เจาะเทรนด์เทคโนโลยี AI & Cloud ในงาน Vietnam Future Forum",
-    excerpt: "สรุปประเด็นสำคัญและทิศทางอุตสาหกรรมเทคสตาร์ทอัพในภูมิภาคเอเชียตะวันออกเฉียงใต้",
-    coverImage: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=600&q=80",
-    category: "Technology",
-    tab: "latest",
-    author: {
-      name: "Anan Tech",
-      avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=150&q=80",
-      role: "Tech Reporter",
-    },
-    date: "02 ต.ค. 2026",
-    readTime: "6 นาที",
-  },
-  {
-    id: "art-5",
-    slug: "organizer-guide-ticket-pricing",
-    title: "กลยุทธ์การตั้งราคาบัตร Early Bird ให้บัตร Sold Out ภายใน 24 ชม.",
-    excerpt: "เทคนิคคำนวณต้นทุน จิตวิทยาการตั้งราคา และการปล่อยบัตรแต่ละรอบอย่างมีประสิทธิภาพสูงสุด",
-    coverImage: "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1000&q=80",
-    category: "Organizer Tips",
-    tab: "organizer",
-    author: {
-      name: "TixFlow Operations",
-      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80",
-      role: "Event Strategist",
-    },
-    date: "09 ต.ค. 2026",
-    readTime: "7 นาที",
-  },
-  {
-    id: "art-6",
-    slug: "organizer-checkin-system-qr",
-    title: "ระบบ Check-in หน้างานด้วย QR Code ลดคิวแออัดได้อย่างไร?",
-    excerpt: "วิธีใช้งานเครื่องสแกนบัตร TixFlow และการจัดการระบบสำรองออฟไลน์เพื่อความราบรื่นหน้างาน",
-    coverImage: "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=600&q=80",
-    category: "Operations",
-    tab: "organizer",
-    author: {
-      name: "Chaiyaporn D.",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80",
-      role: "Technical Lead",
-    },
-    date: "06 ต.ค. 2026",
-    readTime: "4 นาที",
-  },
-  {
-    id: "art-7",
-    slug: "organizer-event-marketing-playbook",
-    title: "Playbook การโปรโมตอีเวนต์บนโซเชียลมีเดียให้เข้าถึงกลุ่มเป้าหมาย",
-    excerpt: "แนวทางการทำคอนเทนต์ ยิงแอด และการเลือกใช้อินฟลูเอนเซอร์ช่วยโปรโมตอย่างคุ้มค่า",
-    coverImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=600&q=80",
-    category: "Marketing",
-    tab: "organizer",
-    author: {
-      name: "Ploy Pim",
-      avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80",
-      role: "Growth Marketer",
-    },
-    date: "03 ต.ค. 2026",
-    readTime: "5 นาที",
-  },
-  {
-    id: "art-8",
-    slug: "organizer-hybrid-events-streaming",
-    title: "จัดอีเวนต์แบบ Hybrid ให้ผู้เข้าร่วมทั้ง Onsite และ Online มีส่วนร่วม",
-    excerpt: "รวมเครื่องมือระบบเสียง วิดีโอสตรีมมิ่งคุณภาพสูง และกิจกรรม Interactive ตลอดงาน",
-    coverImage: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=600&q=80",
-    category: "Production",
-    tab: "organizer",
-    author: {
-      name: "Korn V.",
-      avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80",
-      role: "Live Production Lead",
-    },
-    date: "01 ต.ค. 2026",
-    readTime: "5 นาที",
-  },
-];
+import { ArrowRight, Calendar, Clock, BookOpen } from "lucide-react";
+import { getArticles, formatArticleDate, type ArticleTab } from "@/lib/mock/articles";
 
 export function BlogSection() {
-  const [activeTab, setActiveTab] = useState<"latest" | "organizer">("latest");
+  const [activeTab, setActiveTab] = useState<ArticleTab>("latest");
 
-  const filtered = mockArticles.filter((art) => art.tab === activeTab);
+  const filtered = getArticles(activeTab);
   const featuredArticle = filtered[0];
   const sideArticles = filtered.slice(1, 4);
 
@@ -172,10 +23,10 @@ export function BlogSection() {
               <span>Latest Articles</span>
             </div>
             <h2 className="text-xl font-bold tracking-tight text-[#2B212B] sm:text-2xl md:text-[26px]">
-              บทความและเรื่องราวน่าสนใจ
+              Stories &amp; Event Insights
             </h2>
             <p className="mt-1 text-xs text-[#8E8E8E] sm:text-sm">
-              อัปเดตข่าวสาร เทรนด์อีเวนต์ และไอเดียใหม่ๆ ในวงการ
+              Discover industry trends, festival guides, and best practices for organizers
             </p>
           </div>
 
@@ -191,7 +42,7 @@ export function BlogSection() {
                     : "text-gray-600 hover:text-gray-900"
                 }`}
               >
-                บทความล่าสุด
+                Latest Stories
               </button>
               <button
                 type="button"
@@ -202,7 +53,7 @@ export function BlogSection() {
                     : "text-gray-600 hover:text-gray-900"
                 }`}
               >
-                คู่มือสำหรับผู้จัด
+                Organizer Guides
               </button>
             </div>
 
@@ -211,7 +62,7 @@ export function BlogSection() {
               href="/articles"
               className="group hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-[#ef5360] transition-colors hover:text-[#ec3746] sm:text-sm"
             >
-              <span>ดูทั้งหมด</span>
+              <span>View All</span>
               <ArrowRight
                 size={16}
                 className="transition-transform duration-200 group-hover:translate-x-1"
@@ -226,7 +77,7 @@ export function BlogSection() {
           {featuredArticle && (
             <div className="lg:col-span-7 flex">
               <Link
-                href={`#article-${featuredArticle.slug}`}
+                href={`/articles/${featuredArticle.slug}`}
                 className="group relative flex w-full flex-col overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-xs transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#ef5360]"
               >
                 {/* 1. Article Image with Cover & Subtle Zoom */}
@@ -271,12 +122,12 @@ export function BlogSection() {
                     <div className="mt-2.5 flex items-center gap-3 text-xs text-[#8E8E8E]">
                       <span className="flex items-center gap-1.5">
                         <Calendar size={13} className="text-[#ef5360]" />
-                        <span>{featuredArticle.date}</span>
+                        <span>{formatArticleDate(featuredArticle.publishedAt)}</span>
                       </span>
                       <span>•</span>
                       <span className="flex items-center gap-1.5">
                         <Clock size={13} className="text-[#ef5360]" />
-                        <span>อ่าน {featuredArticle.readTime}</span>
+                        <span>{featuredArticle.readMinutes} min read</span>
                       </span>
                     </div>
 
@@ -288,7 +139,7 @@ export function BlogSection() {
 
                   {/* Read More Link */}
                   <div className="mt-5 flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#ef5360] group-hover:text-[#ec3746]">
-                    <span>อ่านบทความต่อ</span>
+                    <span>Read Full Story</span>
                     <ArrowRight
                       size={15}
                       className="transition-transform duration-200 group-hover:translate-x-1"
@@ -304,7 +155,7 @@ export function BlogSection() {
             {sideArticles.map((article) => (
               <Link
                 key={article.id}
-                href={`#article-${article.slug}`}
+                href={`/articles/${article.slug}`}
                 className="group relative flex h-full items-center gap-3.5 sm:gap-4 overflow-hidden rounded-xl border border-gray-200/80 bg-white p-3.5 sm:p-4 shadow-xs transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#ef5360]"
               >
                 {/* 1. Article Image Thumbnail */}
@@ -346,9 +197,9 @@ export function BlogSection() {
 
                     {/* 4. Date & Metadata */}
                     <div className="flex items-center gap-2 text-[11px] text-[#8E8E8E]">
-                      <span>{article.date}</span>
+                      <span>{formatArticleDate(article.publishedAt)}</span>
                       <span>•</span>
-                      <span>{article.readTime}</span>
+                      <span>{article.readMinutes} min read</span>
                     </div>
                   </div>
                 </div>
@@ -363,7 +214,7 @@ export function BlogSection() {
             href="/articles"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#ef5360] hover:text-[#ec3746]"
           >
-            <span>ดูบทความทั้งหมด</span>
+            <span>View All Articles</span>
             <ArrowRight size={14} />
           </Link>
         </div>

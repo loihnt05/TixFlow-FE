@@ -173,7 +173,7 @@ export function FloatingSearch({ events = [] }: { events?: Event[] }) {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto">
               {eventCategories.slice(0, 12).map((cat) => (
                 <Link
-                  key={cat.value}
+                  key={`${cat.value}-${cat.label}`}
                   href={`/events?category=${cat.value}`}
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-gray-700 hover:bg-[#FFEFF0] hover:text-[#ef5360] transition-colors"

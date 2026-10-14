@@ -75,10 +75,10 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
       keycloak.onAuthSuccess = update;
       keycloak.onAuthRefreshSuccess = update;
       keycloak.onAuthLogout = update;
-      keycloak.onAuthError = () => { if (!disposed) syncSnapshot("Không thể hoàn tất đăng nhập."); };
+      keycloak.onAuthError = () => { if (!disposed) syncSnapshot("Unable to complete sign-in."); };
       keycloak.onAuthRefreshError = () => {
         keycloak?.clearToken();
-        if (!disposed) syncSnapshot("Phiên đăng nhập đã hết hạn.");
+        if (!disposed) syncSnapshot("Your session has expired.");
       };
       keycloak.onTokenExpired = () => {
         if (!keycloak?.authenticated) return;
@@ -87,7 +87,7 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
           if (!disposed) syncSnapshot();
         }).catch(() => {
           keycloak?.clearToken();
-          if (!disposed) syncSnapshot("Phiên đăng nhập đã hết hạn.");
+          if (!disposed) syncSnapshot("Your session has expired.");
         });
       };
 
@@ -107,14 +107,14 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
         syncSnapshot();
         if (window.location.pathname === "/auth/callback") router.replace(consumeReturnTo());
       }).catch(() => {
-        if (!disposed) syncSnapshot("Không thể kết nối tới dịch vụ đăng nhập.");
+        if (!disposed) syncSnapshot("Unable to connect to the authentication service.");
       });
     } catch (cause) {
       if (!disposed) {
         setSnapshot({
           ready: true,
           authenticated: false,
-          error: cause instanceof Error ? cause.message : "Không thể khởi tạo đăng nhập.",
+          error: cause instanceof Error ? cause.message : "Unable to initialize authentication.",
         });
       }
     }
@@ -155,7 +155,7 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
     getAccessToken,
   }), [getAccessToken, login, logout, register, snapshot]);
 
-  if (!snapshot.ready) return <main><p role="status" className="notice">Đang kiểm tra phiên đăng nhập…</p></main>;
+  if (!snapshot.ready) return <main><p role="status" className="notice">Checking authentication session…</p></main>;
   return <KeycloakAuthContext.Provider value={value}>{children}</KeycloakAuthContext.Provider>;
 }
 

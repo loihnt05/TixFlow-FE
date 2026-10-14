@@ -1,4 +1,4 @@
-import type { Organizer, SocialLinks } from "@/lib/mock/events";
+import type { Organizer } from "@/lib/mock/events";
 
 export const mockOrganizers: Organizer[] = [
   {
@@ -6,7 +6,7 @@ export const mockOrganizers: Organizer[] = [
     name: "TechVN",
     slug: "techvn",
     avatar: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=200&h=200&fit=crop",
-    description: "Cộng đồng công nghệ hàng đầu Việt Nam, kết nối các lập trình viên, kỹ sư và doanh nghiệp công nghệ.",
+    description: "Leading technology community in Southeast Asia, connecting software developers, engineers, and tech founders.",
     website: "https://techvn.com",
     socialLinks: {
       website: "https://techvn.com",
@@ -23,7 +23,7 @@ export const mockOrganizers: Organizer[] = [
     name: "VietnamJS",
     slug: "vietnamjs",
     avatar: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=200&h=200&fit=crop",
-    description: "Cộng đồng JavaScript lớn nhất Việt Nam, tổ chức các workshop, meetup và conference hàng năm.",
+    description: "The largest JavaScript community in Vietnam, hosting annual developer conferences, meetups, and open-source workshops.",
     website: "https://vietnamjs.org",
     socialLinks: {
       website: "https://vietnamjs.org",
@@ -40,7 +40,7 @@ export const mockOrganizers: Organizer[] = [
     name: "Startup Vietnam",
     slug: "startup-vietnam",
     avatar: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=200&h=200&fit=crop",
-    description: "Nền tảng hỗ trợ khởi nghiệp, kết nối nhà đầu tư và founder thông qua các sự kiện networking chất lượng.",
+    description: "Startup incubator and ecosystem network, connecting investors, venture capitalists, and high-growth founders.",
     website: "https://startup.vn",
     socialLinks: {
       website: "https://startup.vn",
@@ -56,7 +56,7 @@ export const mockOrganizers: Organizer[] = [
     name: "Design Hub VN",
     slug: "design-hub-vn",
     avatar: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=200&h=200&fit=crop",
-    description: "Cộng đồng thiết kế UI/UX, Product Design và Graphic Design tại Việt Nam.",
+    description: "Creative design collective for UI/UX, product design, and graphic design enthusiasts across the region.",
     website: "https://designhub.vn",
     socialLinks: {
       website: "https://designhub.vn",
@@ -72,7 +72,7 @@ export const mockOrganizers: Organizer[] = [
     name: "AI Vietnam",
     slug: "ai-vietnam",
     avatar: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=200&h=200&fit=crop",
-    description: "Cộng đồng trí tuệ nhân tạo, Machine Learning và Data Science tại Việt Nam.",
+    description: "Artificial intelligence, Machine Learning, and Data Science community hosting technical summits and paper readings.",
     website: "https://ai-vietnam.org",
     socialLinks: {
       website: "https://ai-vietnam.org",
@@ -88,7 +88,7 @@ export const mockOrganizers: Organizer[] = [
     name: "Music Connect",
     slug: "music-connect",
     avatar: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200&h=200&fit=crop",
-    description: "Tổ chức các sự kiện âm nhạc, concert và festival lớn tại Việt Nam.",
+    description: "Premier live music promoter and festival organizer, producing arena concerts, festivals, and club tours.",
     website: "https://musicconnect.vn",
     socialLinks: {
       website: "https://musicconnect.vn",
@@ -105,7 +105,7 @@ export const mockOrganizers: Organizer[] = [
     name: "EduTech Vietnam",
     slug: "edutech-vietnam",
     avatar: "https://images.unsplash.com/photo-1501504905252-473c87e0565b?w=200&h=200&fit=crop",
-    description: "Nền tảng công nghệ giáo dục, tổ chức các khóa học, workshop và hội thảo về EdTech.",
+    description: "Educational technology platform organizing masterclasses, educator workshops, and tech seminars.",
     website: "https://edutech.vn",
     socialLinks: {
       website: "https://edutech.vn",
@@ -121,7 +121,7 @@ export const mockOrganizers: Organizer[] = [
     name: "BlockchainVN",
     slug: "blockchain-vn",
     avatar: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=200&h=200&fit=crop",
-    description: "Cộng đồng Blockchain, Web3 và Crypto tại Việt Nam.",
+    description: "Web3 and decentralized infrastructure community hosting developer hackathons and builder nights.",
     website: "https://blockchain.vn",
     socialLinks: {
       website: "https://blockchain.vn",
@@ -138,7 +138,7 @@ export const mockOrganizers: Organizer[] = [
     name: "Women in Tech VN",
     slug: "women-in-tech-vn",
     avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&h=200&fit=crop",
-    description: "Cộng đồng hỗ trợ phụ nữ trong ngành công nghệ, tổ chức mentorship, workshop và networking.",
+    description: "Empowering women in STEM and technology leadership through mentorship programs and networking dinners.",
     website: "https://womenintech.vn",
     socialLinks: {
       website: "https://womenintech.vn",
@@ -155,7 +155,7 @@ export const mockOrganizers: Organizer[] = [
     name: "DevOps Vietnam",
     slug: "devops-vietnam",
     avatar: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=200&h=200&fit=crop",
-    description: "Cộng đồng DevOps, SRE và Cloud Native tại Việt Nam.",
+    description: "Cloud-native, SRE, and platform engineering community organizing hands-on labs and DevOps days.",
     website: "https://devops.vn",
     socialLinks: {
       website: "https://devops.vn",

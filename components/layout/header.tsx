@@ -49,7 +49,7 @@ export function Header() {
   const [selectedLang, setSelectedLang] = useState<LanguageOption>(languages[0]);
   const [mobileSearch, setMobileSearch] = useState("");
   const user = auth.authenticated ? {
-    name: String(auth.tokenParsed?.name ?? auth.tokenParsed?.preferred_username ?? "Tài khoản"),
+    name: String(auth.tokenParsed?.name ?? auth.tokenParsed?.preferred_username ?? "Account"),
     email: String(auth.tokenParsed?.email ?? ""),
   } : null;
   const isCustomer = auth.roles.includes("Customer");
@@ -150,7 +150,7 @@ export function Header() {
                       </div>
                       {eventCategories.slice(0, 10).map((cat) => (
                         <Link
-                          key={cat.value}
+                          key={`${cat.value}-${cat.label}`}
                           href={`/events?category=${cat.value}`}
                           onClick={() => setEventsDropdownOpen(false)}
                           className="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-[#4A4A4A] hover:bg-[#FFEFF0] hover:text-[#ef5360] transition-colors"
@@ -167,8 +167,8 @@ export function Header() {
               </div>
 
               <Link
-                href="/events?section=articles"
-                className={`nav-link ${pathname === "/events?section=articles" ? "text-[#ef5360] font-bold" : "text-[#4A4A4A]"}`}
+                href="/articles"
+                className={`nav-link ${pathname.startsWith("/articles") ? "text-[#ef5360] font-bold" : "text-[#4A4A4A]"}`}
               >
                 Articles
               </Link>
@@ -434,12 +434,12 @@ export function Header() {
                 </Link>
 
                 <Link
-                  href="/events?section=articles"
+                  href="/articles"
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-gray-700 hover:bg-[#FFEFF0] hover:text-[#ef5360]"
                 >
                   <FileText size={18} className="text-[#ef5360]" />
-                  <span>Articles & News</span>
+                  <span>Articles &amp; News</span>
                 </Link>
 
                 <Link
@@ -478,7 +478,7 @@ export function Header() {
                   </div>
                   {eventCategories.slice(0, 6).map((c) => (
                     <Link
-                      key={c.value}
+                      key={`${c.value}-${c.label}`}
                       href={`/events?category=${c.value}`}
                       onClick={() => setMenuOpen(false)}
                       className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-600 hover:text-[#ef5360]"
