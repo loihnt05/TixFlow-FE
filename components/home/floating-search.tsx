@@ -104,7 +104,7 @@ export function FloatingSearch({ events = [] }: { events?: Event[] }) {
                   {filteredEvents.map((event) => (
                     <Link
                       key={event.id}
-                      href={`/events/${event.slug}`}
+                      href={`/e/${event.slug}`}
                       onClick={() => setIsOpen(false)}
                       className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors group"
                     >

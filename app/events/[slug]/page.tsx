@@ -12,6 +12,6 @@ export default async function EventPage({ params }: EventPageProps) {
   const { slug } = await params;
   const event = await getEventBySlug(slug);
   if (!event) notFound();
-  const related = await getRelatedEvents(event);
+  const related = await getRelatedEvents(event, 5);
   return <EventDetailView event={event} related={related} />;
 }

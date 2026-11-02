@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Calendar, Clock, Award } from "lucide-react";
 import { formatArticleDate, type Article } from "@/lib/mock/articles";
 
 interface EditorsPicksSectionProps {
@@ -15,90 +14,97 @@ export function EditorsPicksSection({
 }: EditorsPicksSectionProps) {
   if (!articles || articles.length === 0) return null;
 
+  const mainPick = articles[0];
+  const sidePicks = articles.slice(1, 5);
+
   return (
     <section
       id="editors-picks"
-      className="editors-picks-section py-12 sm:py-16 bg-white"
+      className="pt-10 pb-8 sm:pt-12 sm:pb-10"
       aria-label="Editors' Picks"
     >
-      <div className="container">
-        {/* Section Header with Decorative Underline and 'VIEW ALL' */}
-        <div className="mb-8 flex items-end justify-between border-b border-gray-200/80 pb-3.5">
-          <div className="relative">
-            <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#ef5360] mb-1">
-              <Award size={14} />
-              <span>Handpicked Collection</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-wider text-[#2B212B] uppercase">
-              Editors&apos; Picks
-            </h2>
-            {/* Thin Decorative Underline Accent */}
-            <div className="absolute -bottom-3.5 left-0 h-[2.5px] w-24 bg-[#ef5360] rounded-full" />
-          </div>
+      <div className="container max-w-[1160px]">
+        {/* Zipevent Magazine Section Header Bar */}
+        <div className="relative mb-6 flex items-center justify-between border-b border-gray-200 pb-2.5">
+          <h2 className="text-[13.5px] font-semibold uppercase tracking-wider text-[#191919]">
+            EDITORS&apos; PICKS
+          </h2>
+          <span className="absolute -bottom-[1px] left-0 h-[2px] w-28 bg-[#ef5360]" />
 
-          <a
-            href="#all-stories"
+          <button
+            type="button"
             onClick={onViewAll}
-            className="group inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#ef5360] transition-colors hover:text-[#ec3746]"
+            className="text-[10.5px] font-normal uppercase tracking-widest text-gray-400 transition-colors hover:text-[#ef5360]"
           >
-            <span>View All</span>
-            <ArrowRight
-              size={15}
-              className="transition-transform duration-200 group-hover:translate-x-1"
-            />
-          </a>
+            VIEW ALL
+          </button>
         </div>
 
-        {/* CSS Grid Layout: 3 to 4 columns on Desktop, 1 column on Mobile */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {articles.map((article) => (
-            <Link
-              key={article.id}
-              href={`/articles/${article.slug}`}
-              className="article-card group flex flex-col focus:outline-none focus:ring-2 focus:ring-[#ef5360] rounded-xl"
-            >
-              {/* Thumbnail: 16:9 ratio, subtle rounded corners, overflow-hidden */}
-              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-gray-100 shadow-2xs">
-                <img
-                  src={article.coverImage}
-                  alt={article.title}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
-                />
-
-                {/* Category Pill Tag */}
-                <div className="absolute left-2.5 top-2.5 rounded-full bg-white/90 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-[#ef5360] shadow-xs">
-                  {article.category}
-                </div>
-              </div>
-
-              {/* Title & Metadata below the thumbnail */}
-              <div className="flex flex-1 flex-col justify-between pt-3.5">
-                <div>
-                  <h3 className="line-clamp-2 text-base font-bold text-[#2B212B] transition-colors duration-200 group-hover:text-[#ef5360] leading-snug">
-                    {article.title}
-                  </h3>
-
-                  <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-gray-500">
-                    {article.excerpt}
-                  </p>
+        {/* Asymmetrical 1 + 2x2 Magazine Grid matching blog.zipeventapp.com */}
+        <div className="grid grid-cols-1 gap-7 lg:grid-cols-12">
+          {/* Left: Large Featured Editor's Pick */}
+          {mainPick && (
+            <article className="lg:col-span-6">
+              <Link href={`/articles/${mainPick.slug}`} className="group block">
+                <div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-100">
+                  <img
+                    src={mainPick.coverImage}
+                    alt={mainPick.title}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                  />
+                  <span className="absolute bottom-0 left-0 bg-[#191919]/90 px-2.5 py-1 text-[9.5px] font-medium uppercase tracking-wider text-white">
+                    {mainPick.category}
+                  </span>
                 </div>
 
-                {/* Metadata: Date in light gray, read time at bottom */}
-                <div className="mt-3.5 flex items-center gap-2 text-[11px] text-gray-400">
-                  <span className="flex items-center gap-1">
-                    <Calendar size={12} className="text-[#ef5360]" />
-                    <span>{formatArticleDate(article.publishedAt)}</span>
+                <h3 className="mt-3.5 text-lg sm:text-[19px] font-semibold leading-snug text-[#191919] transition-colors group-hover:text-[#ef5360]">
+                  {mainPick.title}
+                </h3>
+
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10.5px] uppercase tracking-wider text-gray-400">
+                  <span>BY</span>
+                  <span className="font-medium text-[#ef5360]">
+                    {mainPick.author.name}
                   </span>
                   <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Clock size={12} className="text-[#ef5360]" />
-                    <span>{article.readMinutes} min read</span>
-                  </span>
+                  <span>{formatArticleDate(mainPick.publishedAt)}</span>
+                  <span>•</span>
+                  <span>{mainPick.readMinutes} MINS READ</span>
                 </div>
-              </div>
-            </Link>
-          ))}
+
+                <p className="mt-2.5 line-clamp-3 text-[13px] font-normal leading-relaxed text-gray-500">
+                  {mainPick.excerpt}
+                </p>
+              </Link>
+            </article>
+          )}
+
+          {/* Right: 2x2 Compact Editorial Grid */}
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:col-span-6">
+            {sidePicks.map((item) => (
+              <article key={item.id}>
+                <Link href={`/articles/${item.slug}`} className="group block">
+                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-100">
+                    <img
+                      src={item.coverImage}
+                      alt={item.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                    />
+                  </div>
+
+                  <h4 className="mt-2.5 line-clamp-2 text-[13.5px] font-semibold leading-snug text-[#191919] transition-colors group-hover:text-[#ef5360]">
+                    {item.title}
+                  </h4>
+
+                  <div className="mt-1.5 text-[10px] font-normal uppercase tracking-wider text-gray-400">
+                    {formatArticleDate(item.publishedAt)}
+                  </div>
+                </Link>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
     </section>

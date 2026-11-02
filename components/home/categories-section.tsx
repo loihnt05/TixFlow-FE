@@ -153,25 +153,25 @@ export function CategoriesSection() {
       {/* Section Header */}
       <div className="mb-6 flex flex-col justify-between gap-4 sm:mb-8 sm:flex-row sm:items-end">
         <div>
-          <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#ef5360]">
+          <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#ef5360]">
             <Compass size={14} />
             <span>Explore More Events</span>
           </div>
-          <h2 className="text-xl font-bold tracking-tight text-[#2B212B] sm:text-2xl md:text-[26px]">
+          <h2 className="text-xl font-semibold tracking-tight text-[#2B212B] sm:text-2xl">
             Popular Categories
           </h2>
-          <p className="mt-1 text-xs text-[#8E8E8E] sm:text-sm">
+          <p className="mt-1 text-xs font-normal text-[#8E8E8E] sm:text-sm">
             Explore curated events across more than 18 diverse categories
           </p>
         </div>
 
         <Link
           href="/events"
-          className="group inline-flex items-center gap-1.5 text-xs font-semibold text-[#ef5360] transition-colors hover:text-[#ec3746] sm:text-sm"
+          className="group inline-flex items-center gap-1.5 text-xs font-medium text-[#ef5360] transition-colors hover:text-[#ec3746] sm:text-sm"
         >
           <span>View All Categories</span>
           <ArrowRight
-            size={16}
+            size={15}
             className="transition-transform duration-200 group-hover:translate-x-1"
           />
         </Link>
@@ -183,7 +183,7 @@ export function CategoriesSection() {
           <Link
             key={`${cat.name}-${idx}`}
             href={`/events?category=${cat.value}`}
-            className="category-card group relative block aspect-[16/11] w-full overflow-hidden rounded-xl sm:rounded-2xl bg-gray-900 shadow-2xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#ef5360]"
+            className="category-card group relative block aspect-[16/11] w-full overflow-hidden rounded-xl sm:rounded-2xl bg-gray-900 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#ef5360]"
           >
             {/* Category Image with Object Fit Cover and Subtle Hover Zoom */}
             <img

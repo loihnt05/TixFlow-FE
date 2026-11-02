@@ -11,7 +11,9 @@ const config: Config = {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      // Gutters are already handled by the global `.container` rule (width: min(100% - 32px, ...)).
+      // An extra 2rem padding doubled the side margin and squeezed mobile layouts (header overflow).
+      padding: "0",
       screens: {
         "2xl": "1400px",
       },

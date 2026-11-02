@@ -2,207 +2,318 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  Search,
-  ChevronDown,
-  Compass,
-  Menu,
-  X,
-  BookOpen,
-  Award,
-  Layers,
-} from "lucide-react";
+import { Search, ChevronDown, Ticket, Menu, X } from "lucide-react";
+import { OrganizerOnly } from "@/components/organizer-only";
+import { formatArticleDate, type Article } from "@/lib/mock/articles";
 
 interface BlogNavHeaderProps {
   categories: string[];
+  editorsPickPreviews?: Article[];
   onSelectCategory?: (category: string) => void;
   onOpenSearch?: () => void;
 }
 
 export function BlogNavHeader({
   categories,
+  editorsPickPreviews = [],
   onSelectCategory,
   onOpenSearch,
 }: BlogNavHeaderProps) {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<
+    null | "picks" | "category" | "guidelines" | "reviews"
+  >(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  return (
-    <header className="sticky top-0 z-40 w-full border-b border-gray-100 bg-white/95 shadow-[0_2px_12px_rgba(0,0,0,0.03)] backdrop-blur-md">
-      <div className="container flex h-16 items-center justify-between gap-4">
-        {/* Left: Brand Logo */}
-        <div className="flex items-center gap-3">
-          <Link href="/articles" className="flex items-center gap-2 group">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#ef5360] text-white shadow-md">
-              <Compass size={18} />
-            </span>
-            <div className="flex flex-col">
-              <span className="text-lg font-black tracking-tight text-[#2B212B]">
-                Tix<span className="text-[#ef5360]">Flow</span>
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 -mt-1">
-                Editorial &amp; Blog
-              </span>
-            </div>
-          </Link>
-        </div>
+  const visibleCategories = categories.filter((c) => c !== "all");
 
-        {/* Center: Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+  return (
+    <header className="sticky top-0 z-40 w-full border-b border-gray-200/80 bg-white shadow-[0_1px_8px_rgba(0,0,0,0.03)]">
+      <div className="container relative flex h-[74px] items-center justify-between gap-4">
+        {/* Left: Zipevent-inspired Brand Logo */}
+        <Link href="/blog" className="flex items-center gap-2.5 group shrink-0">
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-tr from-[#ef5360] to-[#ff8c66] text-white shadow-sm transition-transform group-hover:scale-105">
+            <Ticket size={18} strokeWidth={2.2} />
+          </span>
+          <span className="text-[23px] font-normal tracking-tight text-[#2B212B]">
+            tix<span className="font-semibold text-[#ef5360]">flow</span>
+          </span>
+        </Link>
+
+        {/* Center: Uppercase Editorial Navigation matching blog.zipeventapp.com */}
+        <nav
+          className="hidden md:flex items-center gap-5 lg:gap-7"
+          aria-label="Blog navigation"
+        >
           <Link
             href="/"
-            className="rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:text-[#ef5360] hover:bg-gray-50"
+            className="py-2 text-[12px] font-semibold uppercase tracking-wider text-[#191919] transition-colors hover:text-[#ef5360]"
           >
-            Home
+            HOME
           </Link>
 
-          <a
-            href="#editors-picks"
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:text-[#ef5360] hover:bg-gray-50"
+          <Link
+            href="/events"
+            className="py-2 text-[12px] font-semibold uppercase tracking-wider text-[#191919] transition-colors hover:text-[#ef5360]"
           >
-            <Award size={14} className="text-[#ef5360]" />
-            <span>Editors&apos; Picks</span>
-          </a>
+            EVENTS
+          </Link>
 
-          {/* Category Dropdown Menu */}
+          {/* EDITORS' PICKS Mega Preview Dropdown */}
+          <div
+            className="static"
+            onMouseEnter={() => setOpenMenu("picks")}
+            onMouseLeave={() => setOpenMenu(null)}
+          >
+            <a
+              href="#editors-picks"
+              onClick={() => setOpenMenu(null)}
+              className="flex items-center gap-1 py-6 text-[12px] font-semibold uppercase tracking-wider text-[#191919] transition-colors hover:text-[#ef5360]"
+            >
+              <span>EDITORS&apos; PICKS</span>
+              <ChevronDown size={13} className="text-gray-400" />
+            </a>
+
+            {openMenu === "picks" && editorsPickPreviews.length > 0 && (
+              <div className="absolute inset-x-0 top-full border-t border-gray-100 bg-white p-6 shadow-xl z-50">
+                <div className="grid grid-cols-4 gap-5">
+                  {editorsPickPreviews.slice(0, 4).map((post) => (
+                    <Link
+                      key={post.id}
+                      href={`/articles/${post.slug}`}
+                      onClick={() => setOpenMenu(null)}
+                      className="group block"
+                    >
+                      <div className="aspect-[16/10] w-full overflow-hidden bg-gray-100">
+                        <img
+                          src={post.coverImage}
+                          alt={post.title}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      </div>
+                      <h4 className="mt-2.5 line-clamp-2 text-xs font-medium leading-snug text-[#191919] group-hover:text-[#ef5360]">
+                        {post.title}
+                      </h4>
+                      <span className="mt-1 block text-[10px] uppercase tracking-wider text-gray-400">
+                        {formatArticleDate(post.publishedAt)}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* CATEGORY Dropdown */}
           <div
             className="relative"
-            onMouseEnter={() => setDropdownOpen(true)}
-            onMouseLeave={() => setDropdownOpen(false)}
+            onMouseEnter={() => setOpenMenu("category")}
+            onMouseLeave={() => setOpenMenu(null)}
           >
             <button
               type="button"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              aria-expanded={dropdownOpen}
-              className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:text-[#ef5360] hover:bg-gray-50"
+              onClick={() => setOpenMenu(openMenu === "category" ? null : "category")}
+              className="flex items-center gap-1 py-6 text-[12px] font-semibold uppercase tracking-wider text-[#191919] transition-colors hover:text-[#ef5360]"
             >
-              <span>Category</span>
-              <ChevronDown
-                size={14}
-                className={`transition-transform duration-200 ${
-                  dropdownOpen ? "rotate-180 text-[#ef5360]" : ""
-                }`}
-              />
+              <span>CATEGORY</span>
+              <ChevronDown size={13} className="text-gray-400" />
             </button>
 
-            {dropdownOpen && (
-              <div className="absolute left-0 top-full mt-1 w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl animate-in fade-in slide-in-from-top-2 duration-150 z-50">
-                <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                  Browse by Category
-                </div>
-                {categories.map((cat) => (
+            {openMenu === "category" && (
+              <div className="absolute left-0 top-full w-56 border border-gray-100 bg-white py-2 shadow-xl z-50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSelectCategory?.("all");
+                    setOpenMenu(null);
+                  }}
+                  className="block w-full px-4 py-2 text-left text-xs font-medium text-gray-700 hover:bg-[#FFEFF0] hover:text-[#ef5360]"
+                >
+                  All Categories
+                </button>
+                {visibleCategories.map((cat) => (
                   <button
                     key={cat}
                     type="button"
                     onClick={() => {
                       onSelectCategory?.(cat);
-                      setDropdownOpen(false);
-                      const el = document.getElementById("all-stories");
-                      el?.scrollIntoView({ behavior: "smooth" });
+                      setOpenMenu(null);
                     }}
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-[#FFEFF0] hover:text-[#ef5360] text-left"
+                    className="block w-full px-4 py-2 text-left text-xs font-normal text-gray-700 hover:bg-[#FFEFF0] hover:text-[#ef5360]"
                   >
-                    <span>{cat === "all" ? "All Categories" : cat}</span>
+                    {cat}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          <a
-            href="#playbooks"
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:text-[#ef5360] hover:bg-gray-50"
+          {/* EVENT GUIDELINES Dropdown (Editorial Playbooks; Organizer Studio link gated strictly by OrganizerOnly) */}
+          <div
+            className="relative"
+            onMouseEnter={() => setOpenMenu("guidelines")}
+            onMouseLeave={() => setOpenMenu(null)}
           >
-            <BookOpen size={14} className="text-[#ef5360]" />
-            <span>Reviews &amp; Guides</span>
-          </a>
+            <a
+              href="#event-guidelines"
+              onClick={() => setOpenMenu(null)}
+              className="flex items-center gap-1 py-6 text-[12px] font-semibold uppercase tracking-wider text-[#191919] transition-colors hover:text-[#ef5360]"
+            >
+              <span>EVENT GUIDELINES</span>
+              <ChevronDown size={13} className="text-gray-400" />
+            </a>
 
-          <a
-            href="#all-stories"
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:text-[#ef5360] hover:bg-gray-50"
+            {openMenu === "guidelines" && (
+              <div className="absolute left-0 top-full w-56 border border-gray-100 bg-white py-2 shadow-xl z-50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSelectCategory?.("Event Guidelines");
+                    setOpenMenu(null);
+                  }}
+                  className="block w-full px-4 py-2 text-left text-xs font-normal text-gray-700 hover:bg-[#FFEFF0] hover:text-[#ef5360]"
+                >
+                  Ticketing &amp; Registration Guides
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSelectCategory?.("Event News");
+                    setOpenMenu(null);
+                  }}
+                  className="block w-full px-4 py-2 text-left text-xs font-normal text-gray-700 hover:bg-[#FFEFF0] hover:text-[#ef5360]"
+                >
+                  Event Marketing &amp; PR
+                </button>
+                <OrganizerOnly>
+                  <Link
+                    href="/organizer"
+                    onClick={() => setOpenMenu(null)}
+                    className="block w-full border-t border-gray-100 px-4 py-2 text-left text-xs font-medium text-[#ef5360] hover:bg-[#FFEFF0]"
+                  >
+                    Organizer Workspace →
+                  </Link>
+                </OrganizerOnly>
+              </div>
+            )}
+          </div>
+
+          {/* REVIEWS Dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => setOpenMenu("reviews")}
+            onMouseLeave={() => setOpenMenu(null)}
           >
-            <Layers size={14} className="text-[#ef5360]" />
-            <span>All Stories</span>
-          </a>
+            <a
+              href="#art-entertainment"
+              onClick={() => setOpenMenu(null)}
+              className="flex items-center gap-1 py-6 text-[12px] font-semibold uppercase tracking-wider text-[#191919] transition-colors hover:text-[#ef5360]"
+            >
+              <span>REVIEWS</span>
+              <ChevronDown size={13} className="text-gray-400" />
+            </a>
+
+            {openMenu === "reviews" && (
+              <div className="absolute left-0 top-full w-52 border border-gray-100 bg-white py-2 shadow-xl z-50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSelectCategory?.("Art & Entertainment");
+                    setOpenMenu(null);
+                  }}
+                  className="block w-full px-4 py-2 text-left text-xs font-normal text-gray-700 hover:bg-[#FFEFF0] hover:text-[#ef5360]"
+                >
+                  Concerts &amp; Cinema Reviews
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSelectCategory?.("Food & Travel");
+                    setOpenMenu(null);
+                  }}
+                  className="block w-full px-4 py-2 text-left text-xs font-normal text-gray-700 hover:bg-[#FFEFF0] hover:text-[#ef5360]"
+                >
+                  Cafes &amp; Exhibition Hopping
+                </button>
+              </div>
+            )}
+          </div>
         </nav>
 
-        {/* Right: Search Icon Button & Mobile Menu Toggle */}
-        <div className="flex items-center gap-2">
+        {/* Right: Search Trigger & Mobile Menu */}
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={onOpenSearch}
-            aria-label="Search articles"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-[#FFEFF0] hover:text-[#ef5360]"
-            title="Search articles"
+            aria-label="Search blog"
+            className="grid h-9 w-9 place-items-center rounded-full text-[#191919] transition-colors hover:bg-gray-100 hover:text-[#ef5360]"
           >
-            <Search size={18} />
+            <Search size={17} strokeWidth={2} />
           </button>
 
-          {/* Mobile hamburger menu toggle */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle navigation menu"
-            className="flex h-10 w-10 md:hidden items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+            aria-label="Toggle blog menu"
+            className="grid h-9 w-9 place-items-center rounded-full text-[#191919] hover:bg-gray-100 md:hidden"
           >
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu Drawer */}
+      {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="border-t border-gray-100 bg-white px-5 py-4 shadow-lg md:hidden animate-in slide-in-from-top-2 duration-200">
-          <nav className="flex flex-col space-y-2">
+        <div className="border-t border-gray-100 bg-white px-4 py-4 shadow-lg md:hidden">
+          <div className="flex flex-col space-y-1 text-xs font-semibold uppercase tracking-wider text-[#191919]">
             <Link
               href="/"
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 text-sm font-semibold text-gray-800 hover:text-[#ef5360]"
+              className="rounded-lg px-3 py-2.5 hover:bg-gray-50 hover:text-[#ef5360]"
             >
-              Home
+              HOME
+            </Link>
+            <Link
+              href="/events"
+              onClick={() => setMobileMenuOpen(false)}
+              className="rounded-lg px-3 py-2.5 hover:bg-gray-50 hover:text-[#ef5360]"
+            >
+              ALL EVENTS
             </Link>
             <a
               href="#editors-picks"
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 text-sm font-semibold text-gray-800 hover:text-[#ef5360]"
+              className="rounded-lg px-3 py-2.5 hover:bg-gray-50 hover:text-[#ef5360]"
             >
-              Editors&apos; Picks
-            </a>
-            <div className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-400">
-              Categories
-            </div>
-            <div className="grid grid-cols-2 gap-1 px-3">
-              {categories.slice(0, 8).map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => {
-                    onSelectCategory?.(cat);
-                    setMobileMenuOpen(false);
-                    const el = document.getElementById("all-stories");
-                    el?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                  className="text-left text-xs text-gray-600 py-1.5 hover:text-[#ef5360]"
-                >
-                  • {cat === "all" ? "All Categories" : cat}
-                </button>
-              ))}
-            </div>
-            <a
-              href="#playbooks"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 text-sm font-semibold text-gray-800 hover:text-[#ef5360]"
-            >
-              Reviews &amp; Guides
+              EDITORS&apos; PICKS
             </a>
             <a
-              href="#all-stories"
+              href="#event-guidelines"
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 text-sm font-semibold text-gray-800 hover:text-[#ef5360]"
+              className="rounded-lg px-3 py-2.5 hover:bg-gray-50 hover:text-[#ef5360]"
             >
-              All Stories
+              EVENT GUIDELINES
             </a>
-          </nav>
+            <div className="border-t border-gray-100 pt-2 mt-2">
+              <div className="px-3 py-1 text-[10px] font-medium text-gray-400">
+                CATEGORIES
+              </div>
+              <div className="flex flex-wrap gap-1.5 px-3 pt-1.5">
+                {visibleCategories.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => {
+                      onSelectCategory?.(cat);
+                      setMobileMenuOpen(false);
+                    }}
+                    className="rounded-full border border-gray-200 px-2.5 py-1 text-[11px] font-normal normal-case tracking-normal text-gray-600 hover:border-[#ef5360] hover:text-[#ef5360]"
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </header>

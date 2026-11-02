@@ -92,7 +92,7 @@ export function ClassicSlider({
             onSwiper={(swiper) => {
               swiperRef.current = swiper;
             }}
-            className="w-full !overflow-visible"
+            className="w-full !overflow-x-clip !overflow-y-visible"
           >
             {articles.map((article) => (
               <SwiperSlide key={article.id}>

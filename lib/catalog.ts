@@ -182,6 +182,52 @@ export function toPublicEvent(item: PublicEventDto): Event {
   const start = session?.startsAtUtc ?? item.saleStartsAtUtc ?? item.createdAtUtc;
   const end = session?.endsAtUtc ?? start;
   const tickets = session?.ticketTypes ?? [];
+  const mappedTickets: Event["ticketTypes"] = tickets.length > 0 ? tickets.map((ticket) => ({
+    id: ticket.id,
+    eventId: item.id,
+    name: ticket.name,
+    description: ticket.description,
+    price: ticket.price,
+    currency: ticket.currency,
+    quantity: ticket.totalQuantity,
+    sold: ticket.totalQuantity - ticket.availableQuantity,
+    minPerOrder: 1,
+    maxPerOrder: ticket.maxPerOrder,
+    saleStart: ticket.saleStartsAtUtc ?? item.saleStartsAtUtc ?? item.createdAtUtc,
+    saleEnd: ticket.saleEndsAtUtc ?? item.saleEndsAtUtc ?? start,
+    status: (ticket.availableQuantity <= 0 ? "sold_out" : "available") as Event["ticketTypes"][number]["status"],
+    benefits: [],
+    inventoryMode: ticket.inventoryMode,
+    availableQuantity: ticket.availableQuantity,
+    seats: ticket.seats,
+  })) : [{
+    id: `${item.id}-pending-inventory`, eventId: item.id, name: "General Admission",
+    description: "Ticket inventory will be available soon", price: 0, currency: "VND",
+    quantity: 0, sold: 0, minPerOrder: 1, maxPerOrder: 0,
+    saleStart: item.saleStartsAtUtc ?? item.createdAtUtc,
+    saleEnd: item.saleEndsAtUtc ?? start, status: "not_started" as const, benefits: [],
+  }];
+
+  const hasReservedSeating = mappedTickets.some((t) => t.inventoryMode === "ReservedSeating");
+  const allFree = tickets.length > 0 && mappedTickets.every((t) => t.price === 0);
+  const ticketingMode: Event["ticketingMode"] = hasReservedSeating
+    ? "seating"
+    : allFree
+      ? "registration"
+      : "tiered";
+
+  const rounds: Event["rounds"] =
+    item.sessions.length > 0
+      ? item.sessions.map((s) => ({
+          id: s.id,
+          sessionId: s.id,
+          date: dateInVietnamIso(s.startsAtUtc),
+          startTime: timeInVietnam(s.startsAtUtc),
+          endTime: timeInVietnam(s.endsAtUtc),
+          title: s.name || item.name,
+        }))
+      : undefined;
+
   return {
     id: item.id,
     slug: item.slug,
@@ -191,6 +237,10 @@ export function toPublicEvent(item: PublicEventDto): Event {
     coverImage: item.imageUrl ?? fallbackImage,
     thumbnailImage: item.imageUrl ?? fallbackImage,
     category: item.category.toLowerCase() as EventCategory,
+    ticketingMode,
+    currency: mappedTickets[0]?.currency ?? "VND",
+    enablePromoCode: ticketingMode === "tiered",
+    rounds: hasReservedSeating || item.sessions.length > 1 ? rounds : undefined,
     organizer: {
       id: item.organizer.id,
       name: item.organizer.name,
@@ -219,36 +269,22 @@ export function toPublicEvent(item: PublicEventDto): Event {
     endTime: timeInVietnam(end),
     timezone: item.venue?.timeZone ?? "Asia/Ho_Chi_Minh",
     status: item.status.toLowerCase() as Event["status"],
-    ticketTypes: tickets.length > 0 ? tickets.map((ticket) => ({
-      id: ticket.id,
-      eventId: item.id,
-      name: ticket.name,
-      description: ticket.description,
-      price: ticket.price,
-      currency: ticket.currency,
-      quantity: ticket.totalQuantity,
-      sold: ticket.totalQuantity - ticket.availableQuantity,
-      maxPerOrder: ticket.maxPerOrder,
-      saleStart: ticket.saleStartsAtUtc ?? item.saleStartsAtUtc ?? item.createdAtUtc,
-      saleEnd: ticket.saleEndsAtUtc ?? item.saleEndsAtUtc ?? start,
-      status: ticket.availableQuantity <= 0 ? "sold_out" : "available",
-      benefits: [],
-      inventoryMode: ticket.inventoryMode,
-      availableQuantity: ticket.availableQuantity,
-      seats: ticket.seats,
-    })) : [{
-      id: `${item.id}-pending-inventory`, eventId: item.id, name: "General Admission",
-      description: "Ticket inventory will be available soon", price: 0, currency: "VND",
-      quantity: 0, sold: 0, maxPerOrder: 0,
-      saleStart: item.saleStartsAtUtc ?? item.createdAtUtc,
-      saleEnd: item.saleEndsAtUtc ?? start, status: "not_started", benefits: [],
-    }],
+    ticketTypes: mappedTickets,
     tags: [item.category],
     featured: false,
     viewCount: 0,
     createdAt: item.createdAtUtc,
     updatedAt: item.updatedAtUtc,
   };
+}
+
+function dateInVietnamIso(value: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(value));
 }
 
 function timeInVietnam(value: string): string {

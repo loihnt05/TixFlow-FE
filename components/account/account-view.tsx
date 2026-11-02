@@ -134,13 +134,13 @@ export function AccountView({ section = "profile" }: { section?: string }) {
   };
 
   return (
-    <main className="min-h-screen bg-[#FDFCFD] pb-20 pt-8 sm:pt-10">
+    <main className="ambient-page min-h-screen pb-20 pt-8 sm:pt-10">
       <div className="container max-w-6xl">
         {/* Top Header Card */}
-        <div className="mb-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-2xs">
+        <div className="mb-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-tr from-[#ef5360] to-[#f8a846] text-2xl font-black text-white shadow-md">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-[#ef5360] to-[#f8a846] text-2xl font-bold text-white shadow-md">
                 {name.charAt(0) || "U"}
               </div>
               <div>
@@ -457,7 +457,7 @@ export function AccountView({ section = "profile" }: { section?: string }) {
                           href={`/events/${fe.slug}`}
                           className="group block overflow-hidden rounded-xl border border-gray-100 bg-white shadow-2xs hover:border-[#ef5360]/30 hover:shadow-xs"
                         >
-                          <div className="aspect-16/9 w-full overflow-hidden bg-gray-100">
+                          <div className="aspect-[16/9] w-full overflow-hidden bg-gray-100">
                             <img
                               src={fe.coverImage}
                               alt={fe.title}

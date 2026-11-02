@@ -1,7 +1,11 @@
 node_modules
+**/node_modules
+keycloak-theme
 .next
 npm-debug.log*
 .env
 .env.local
 .env.*.local
+.env.production
+.git
 

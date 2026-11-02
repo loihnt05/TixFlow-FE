@@ -10,6 +10,13 @@ interface CheckoutPageProps {
     quantity?: string;
     sessionId?: string;
     seats?: string;
+    holdId?: string;
+    items?: string;
+    promo?: string;
+    round?: string;
+    zone?: string;
+    seatLabels?: string;
+    addons?: string;
   }>;
 }
 
@@ -32,7 +39,7 @@ export default async function CheckoutPage({ searchParams }: CheckoutPageProps) 
         const backend = await response.json() as {
           sessions?: Array<{ id: string; ticketTypes?: Array<{ id: string; name: string; inventoryMode: string }> }>;
         };
-        const session = backend.sessions?.[0];
+        const session = backend.sessions?.find(item => item.id === params.sessionId) ?? backend.sessions?.[0];
         const backendTicket = session?.ticketTypes?.find((item) => item.id === ticket)
           ?? session?.ticketTypes?.find((item) => item.name.toLowerCase() === event.ticketTypes.find((candidate) => candidate.id === ticket)?.name.toLowerCase())
           ?? session?.ticketTypes?.[0];
@@ -56,6 +63,17 @@ export default async function CheckoutPage({ searchParams }: CheckoutPageProps) 
       sessionId={sessionId}
       inventoryMode={inventoryMode}
       seatIds={seatIds}
+      existingHoldId={typeof params.holdId === "string" ? params.holdId : undefined}
+      rawItems={typeof params.items === "string" ? params.items : undefined}
+      promoCode={typeof params.promo === "string" ? params.promo : undefined}
+      roundLabel={typeof params.round === "string" ? params.round : undefined}
+      zoneLabel={typeof params.zone === "string" ? params.zone : undefined}
+      seatLabels={
+        typeof params.seatLabels === "string"
+          ? params.seatLabels.split(",").filter(Boolean)
+          : undefined
+      }
+      addonsLabel={typeof params.addons === "string" ? params.addons : undefined}
     />
   );
 }

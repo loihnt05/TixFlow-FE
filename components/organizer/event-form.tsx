@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { ArrowLeft, ArrowRight, Check, ImagePlus, Plus } from "lucide-react";
 import { useApi } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ManagedEventDto, ManagedSession, ManagedTicketType, ManagedVenue } from "@/lib/catalog";
 import type { EventCategory } from "@/lib/mock/events";
 
@@ -27,6 +28,8 @@ export function EventForm({ eventId }: { eventId?: string }) {
   const [endTime, setEndTime] = useState("18:00");
   const [price, setPrice] = useState(250000);
   const [quantity, setQuantity] = useState(250);
+  const [maxPerOrder, setMaxPerOrder] = useState(10);
+  const [ticketFormat, setTicketFormat] = useState<"registration" | "tiered" | "seating">("tiered");
   const [ticketName, setTicketName] = useState("General Admission");
   const [existingTicket, setExistingTicket] = useState<ManagedTicketType>();
   const [loading, setLoading] = useState(Boolean(eventId));
@@ -63,6 +66,14 @@ export function EventForm({ eventId }: { eventId?: string }) {
             setTicketName(ticket.name);
             setPrice(ticket.price);
             setQuantity(ticket.capacity);
+            setMaxPerOrder(ticket.maxPerOrder || 10);
+            setTicketFormat(
+              ticket.inventoryMode === "ReservedSeating"
+                ? "seating"
+                : ticket.price === 0
+                  ? "registration"
+                  : "tiered",
+            );
           }
         }
       })
@@ -116,11 +127,16 @@ export function EventForm({ eventId }: { eventId?: string }) {
       const ticketPayload = JSON.stringify({
         name: ticketName,
         code: ticketCode(ticketName),
-        description: "Standard event access",
-        price,
-        inventoryMode: "GeneralAdmission",
+        description:
+          ticketFormat === "registration"
+            ? "Free registration pass with instant QR check-in"
+            : ticketFormat === "seating"
+              ? "Reserved zone & seat ticket"
+              : "Standard event access",
+        price: ticketFormat === "registration" ? 0 : price,
+        inventoryMode: ticketFormat === "seating" ? "ReservedSeating" : "GeneralAdmission",
         capacity: quantity,
-        maxPerOrder: 10,
+        maxPerOrder,
         saleStartsAtUtc: new Date().toISOString(),
         saleEndsAtUtc: startsAtUtc,
       });
@@ -160,7 +176,7 @@ export function EventForm({ eventId }: { eventId?: string }) {
     }
   }
 
-  if (loading) return <div className="rounded-2xl border border-slate-100 bg-white p-8 text-sm text-slate-500">Loading event…</div>;
+  if (loading) return <div role="status" aria-busy="true" className="space-y-5 rounded-2xl border border-slate-100 bg-white p-5 sm:p-7"><span className="sr-only">Loading event…</span><Skeleton className="h-7 w-48" />{Array.from({ length: 4 }, (_, index) => <div key={index} className="space-y-2"><Skeleton className="h-3 w-28" /><Skeleton className="h-11 w-full rounded-xl" /></div>)}</div>;
 
   return <div className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-7"><div className="mb-6 flex flex-wrap items-center justify-between gap-3"><div><p className="eyebrow">Event setup</p><h2 className="mt-1 text-xl font-extrabold">{eventId ? "Edit event" : "Create an event"}</h2></div><Link href="/organizer/events" className="text-xs font-semibold text-slate-500 hover:text-[#e7653c]">Save and exit</Link></div>
     {error && <p role="alert" className="notice mb-5">{error}</p>}
@@ -169,7 +185,121 @@ export function EventForm({ eventId }: { eventId?: string }) {
       {step === 0 && <div className="grid gap-4 sm:grid-cols-2"><label className="text-xs font-bold text-slate-600 sm:col-span-2">Event name<input required value={name} onChange={(e) => setName(e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal" placeholder="Give your event a name" /></label><label className="text-xs font-bold text-slate-600">Category<select value={category} onChange={(e) => setCategory(e.target.value as EventCategory)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal"><option value="technology">IT & Tech</option><option value="business">Business</option><option value="music">Music</option><option value="education">Education</option><option value="art">Art & Design</option><option value="workshop">Workshop</option></select></label><div className="text-xs text-slate-500 sm:pt-7">Choose the category that best describes your event.</div><label className="text-xs font-bold text-slate-600 sm:col-span-2">Description<textarea required rows={5} value={description} onChange={(e) => setDescription(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 p-3 text-sm font-normal" placeholder="Tell people what makes this event worth attending" /></label></div>}
       {step === 1 && <div><div className="flex min-h-52 flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 text-center" style={imageUrl ? { backgroundImage: `linear-gradient(rgb(15 23 42 / 35%), rgb(15 23 42 / 35%)), url(${imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}><ImagePlus size={28} className={imageUrl ? "text-white" : "text-[#e7653c]"} /><span className={`mt-3 text-sm font-bold ${imageUrl ? "text-white" : ""}`}>{imageUrl ? "Cover image preview" : "Add a cover image URL"}</span><span className={`mt-1 text-xs ${imageUrl ? "text-white/90" : "text-slate-500"}`}>Recommended 1600 × 900 px</span></div><label className="mt-4 block text-xs font-bold text-slate-600">Image URL<input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal" placeholder="https://images.example.com/event-cover.jpg" /></label><p className="mt-3 text-xs text-slate-500">TixFlow stores only the HTTP(S) image URL, not binary image data.</p></div>}
       {step === 2 && <div className="grid gap-4 sm:grid-cols-2"><label className="text-xs font-bold text-slate-600">Start date<input type="date" required value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal" /></label><label className="text-xs font-bold text-slate-600">Start time<input type="time" required value={startTime} onChange={(e) => setStartTime(e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal" /></label><label className="text-xs font-bold text-slate-600">End date<input type="date" required value={endDate} onChange={(e) => setEndDate(e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal" /></label><label className="text-xs font-bold text-slate-600">End time<input type="time" required value={endTime} onChange={(e) => setEndTime(e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal" /></label><label className="text-xs font-bold text-slate-600">Venue<input required value={venue} onChange={(e) => setVenue(e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal" placeholder="Venue name" /></label><label className="text-xs font-bold text-slate-600">Address<input required value={address} onChange={(e) => setAddress(e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal" placeholder="Street address" /></label><label className="text-xs font-bold text-slate-600">City<input required value={city} onChange={(e) => setCity(e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal" /></label></div>}
-      {step === 3 && <div><div className="mb-4 flex items-center justify-between"><div><div className="text-sm font-bold">{ticketName}</div><div className="mt-1 text-xs text-slate-500">Standard event access</div></div><button type="button" aria-label="Add ticket type" className="button-outline !min-h-9 !px-3"><Plus size={15} />Add ticket</button></div><div className="grid gap-4 rounded-xl border border-slate-100 p-4 sm:grid-cols-2"><label className="text-xs font-bold text-slate-600">Ticket name<input required value={ticketName} onChange={(e) => setTicketName(e.target.value)} className="mt-2 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-normal" /></label><label className="text-xs font-bold text-slate-600">Price (VND)<input type="number" min="0" value={price} onChange={(e) => setPrice(Number(e.target.value))} className="mt-2 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-normal" /></label><label className="text-xs font-bold text-slate-600">Quantity<input type="number" min="1" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} className="mt-2 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-normal" /></label><label className="text-xs font-bold text-slate-600">Sale ends<input type="date" value={startDate} readOnly className="mt-2 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-normal" /></label></div><p className="mt-3 text-xs text-slate-500">Price and available quantity are saved to the event inventory.</p></div>}
+      {step === 3 && (
+        <div className="space-y-5">
+          {/* Zipevent Ticketing Format Selector */}
+          <div>
+            <div className="text-xs font-bold text-slate-600">Ticketing UI Template (Zipevent Standard)</div>
+            <div className="mt-2 grid gap-3 sm:grid-cols-3">
+              {[
+                {
+                  id: "registration" as const,
+                  title: "Free Registration",
+                  desc: "Free pass + Registration summary (Work Life Festival style)",
+                },
+                {
+                  id: "tiered" as const,
+                  title: "Tiered / Phase Tickets",
+                  desc: "Paid tiers, Promo codes & Order VAT summary (Economic Forum style)",
+                },
+                {
+                  id: "seating" as const,
+                  title: "Date, Round & Zone Seating",
+                  desc: "Show calendar, Arena zone map & Seat picker (Concert / Fanmeeting style)",
+                },
+              ].map((tmpl) => (
+                <button
+                  key={tmpl.id}
+                  type="button"
+                  onClick={() => {
+                    setTicketFormat(tmpl.id);
+                    if (tmpl.id === "registration") {
+                      setPrice(0);
+                      setTicketName("Free Registration");
+                      setMaxPerOrder(4);
+                    } else if (tmpl.id === "seating") {
+                      if (price === 0) setPrice(650000);
+                      setTicketName("VIP Zone A");
+                      setMaxPerOrder(4);
+                    } else {
+                      if (price === 0) setPrice(250000);
+                      setTicketName("Early Bird");
+                      setMaxPerOrder(10);
+                    }
+                  }}
+                  className={`rounded-xl border p-3.5 text-left transition-all ${
+                    ticketFormat === tmpl.id
+                      ? "border-[#ef5360] bg-[#FFEFF0]/50 ring-1 ring-[#ef5360]/25"
+                      : "border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <div className="text-xs font-extrabold text-slate-900">{tmpl.title}</div>
+                  <div className="mt-1 text-[11px] leading-snug text-slate-500">{tmpl.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-2 flex items-center justify-between">
+            <div>
+              <div className="text-sm font-bold">{ticketName}</div>
+              <div className="mt-0.5 text-xs text-slate-500">
+                {ticketFormat === "seating" ? "Reserved Seating Zone" : "General Admission Tier"}
+              </div>
+            </div>
+            <button type="button" aria-label="Add ticket type" className="button-outline !min-h-9 !px-3">
+              <Plus size={15} />Add ticket
+            </button>
+          </div>
+
+          <div className="grid gap-4 rounded-xl border border-slate-100 p-4 sm:grid-cols-2">
+            <label className="text-xs font-bold text-slate-600">
+              Ticket / Zone name
+              <input
+                required
+                value={ticketName}
+                onChange={(e) => setTicketName(e.target.value)}
+                className="mt-2 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-normal"
+              />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Price (VND)
+              <input
+                type="number"
+                min="0"
+                disabled={ticketFormat === "registration"}
+                value={ticketFormat === "registration" ? 0 : price}
+                onChange={(e) => setPrice(Number(e.target.value))}
+                className="mt-2 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-normal disabled:bg-slate-50"
+              />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Capacity
+              <input
+                type="number"
+                min="1"
+                value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                className="mt-2 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-normal"
+              />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Max tickets per order
+              <input
+                type="number"
+                min="1"
+                max="50"
+                value={maxPerOrder}
+                onChange={(e) => setMaxPerOrder(Number(e.target.value))}
+                className="mt-2 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-normal"
+              />
+            </label>
+          </div>
+          <p className="text-xs text-slate-500">
+            Selected format automatically configures the public Zipevent booking layout, order summary card, and inventory mode.
+          </p>
+        </div>
+      )}
       {step === 4 && <div className="overflow-hidden rounded-2xl border border-slate-100"><div className="h-40 bg-[#fff0e9] bg-cover bg-center p-5" style={imageUrl ? { backgroundImage: `linear-gradient(rgb(255 240 233 / 88%), rgb(255 240 233 / 88%)), url(${imageUrl})` } : undefined}><p className="eyebrow">Event preview</p><h3 className="mt-3 max-w-xl text-2xl font-extrabold">{name || "Your event name"}</h3><p className="mt-2 text-sm text-slate-600">{description || "Your event description will appear here."}</p></div><div className="grid gap-3 p-5 text-sm sm:grid-cols-2"><div><span className="text-slate-400">Venue</span><div className="mt-1 font-bold">{venue || "Venue not set"}</div></div><div><span className="text-slate-400">Tickets</span><div className="mt-1 font-bold">{Number(price).toLocaleString()} VND · {quantity} planned</div></div></div></div>}
       <div className="mt-8 flex justify-between border-t border-slate-100 pt-5"><button type="button" disabled={step === 0 || saving} onClick={() => setStep((value) => value - 1)} className="button-outline disabled:opacity-40"><ArrowLeft size={15} />Back</button>{step < steps.length - 1 ? <button type="button" onClick={() => setStep((value) => value + 1)} className="button-primary">Continue<ArrowRight size={15} /></button> : <div className="flex gap-2"><button type="submit" value="draft" disabled={saving} className="button-outline">{saving ? "Saving…" : "Save draft"}</button><button type="submit" value="published" disabled={saving} className="button-primary">Publish event<Check size={15} /></button></div>}</div>
     </form>}

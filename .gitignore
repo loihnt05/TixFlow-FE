@@ -7,6 +7,8 @@
 **/.next/
 **/coverage/
 .env
+.env.production
+audit.json
 .env.local
 .env.*.local
 *.tsbuildinfo

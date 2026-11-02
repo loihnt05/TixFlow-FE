@@ -147,7 +147,7 @@ export function Footer() {
                     Store
                   </Link>
                 </li>
-                {(isOrganizer || !auth.authenticated) && <li>
+                {isOrganizer && <li>
                     <Link href="/organizer" className="hover:text-white transition-colors">
                       For Organizers
                     </Link>
@@ -269,7 +269,7 @@ export function Footer() {
               Privacy Policy
             </Link>
             <span>•</span>
-            <Link href="/organizer" className="hover:text-white transition-colors">
+            <Link href="/privacy" className="hover:text-white transition-colors">
               Cookie Preferences
             </Link>
           </div>

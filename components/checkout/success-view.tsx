@@ -133,7 +133,7 @@ export function SuccessView({ event, orderId }: { event?: Event; orderId?: strin
           </p>
 
           {/* Digital Ticket Pass Card with Zipevent Tear Line */}
-          <div className="relative mx-auto mt-7 overflow-hidden rounded-2xl border border-gray-200 bg-linear-to-b from-gray-50/80 to-white text-left shadow-xs">
+          <div className="relative mx-auto mt-7 overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-b from-gray-50/80 to-white text-left shadow-sm">
             {/* Ticket Header */}
             <div className="border-b border-gray-100 bg-white p-5">
               <div className="flex items-center justify-between">

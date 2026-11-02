@@ -155,7 +155,8 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
     getAccessToken,
   }), [getAccessToken, login, logout, register, snapshot]);
 
-  if (!snapshot.ready) return <main><p role="status" className="notice">Checking authentication session…</p></main>;
+  // Always render the tree: public pages (and their skeletons) must not wait for Keycloak.
+  // Consumers that need a resolved session (ProtectedRoute, header) check `ready` themselves.
   return <KeycloakAuthContext.Provider value={value}>{children}</KeycloakAuthContext.Provider>;
 }
 

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useApi, type CurrentUser } from "@/lib/api";
+import { ErrorState } from "@/components/states/error-state";
+import { ProfileSkeleton } from "@/components/states/skeletons";
 
 export function CurrentUserProfile() {
   const api = useApi();
@@ -17,9 +19,8 @@ export function CurrentUserProfile() {
     });
     return () => controller.abort();
   }, [api, attempt]);
-  if (error) return <div className="notice error" role="alert"><p>{error}</p>
-    <button type="button" onClick={() => setAttempt(value => value + 1)}>Try again</button></div>;
-  if (!user) return <p role="status" className="notice">Loading profile…</p>;
+  if (error) return <ErrorState compact title="We couldn't load your profile" message={error} onRetry={() => setAttempt(value => value + 1)} />;
+  if (!user) return <ProfileSkeleton />;
   return <article className="profile-card">
     <p className="eyebrow">TIXFLOW ACCOUNT</p>
     <h1 className="page-title">{user.name}</h1>

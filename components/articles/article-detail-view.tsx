@@ -13,6 +13,7 @@ import {
   BookOpen,
   ArrowRight,
 } from "lucide-react";
+import { OrganizerOnly } from "@/components/organizer-only";
 import { formatArticleDate, type Article } from "@/lib/mock/articles";
 
 interface ArticleDetailViewProps {
@@ -233,17 +234,17 @@ export function ArticleDetailView({ article, related }: ArticleDetailViewProps) 
         </div>
 
         {/* Author Bio Box */}
-        <div className="mt-8 rounded-2xl border border-gray-200 bg-linear-to-r from-gray-50 to-white p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="mt-8 rounded-2xl border border-gray-200 bg-gradient-to-r from-gray-50 to-white p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <img
             src={article.author.avatar}
             alt={article.author.name}
             className="h-14 w-14 rounded-full object-cover ring-2 ring-gray-200 shrink-0"
           />
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-bold uppercase tracking-wider text-[#ef5360]">
+            <div className="text-xs font-semibold uppercase tracking-wider text-[#ef5360]">
               Written by
             </div>
-            <h3 className="text-base font-bold text-gray-900 mt-0.5">{article.author.name}</h3>
+            <h3 className="text-base font-semibold text-gray-900 mt-0.5">{article.author.name}</h3>
             <p className="text-xs text-gray-500 mt-1">
               {article.author.role} at TixFlow. Passionate about live events, attendee experience, and modern ticketing tech.
             </p>
@@ -256,17 +257,17 @@ export function ArticleDetailView({ article, related }: ArticleDetailViewProps) 
         <section className="container max-w-6xl mt-16 pt-12 border-t border-gray-200">
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <div className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#ef5360]">
+              <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#ef5360]">
                 <BookOpen size={14} />
                 <span>Keep Reading</span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#2B212B]">
+              <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#2B212B]">
                 Related Articles &amp; Guides
               </h2>
             </div>
             <Link
-              href="/articles"
-              className="inline-flex items-center gap-1 text-xs font-bold text-[#ef5360] hover:underline sm:text-sm"
+              href="/blog"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-[#ef5360] hover:underline sm:text-sm"
             >
               <span>View All</span>
               <ArrowRight size={14} />
@@ -278,7 +279,7 @@ export function ArticleDetailView({ article, related }: ArticleDetailViewProps) 
               <Link
                 key={rel.id}
                 href={`/articles/${rel.slug}`}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-2xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
                 <div className="relative aspect-[16/10] w-full overflow-hidden bg-gray-100">
                   <img
@@ -286,7 +287,7 @@ export function ArticleDetailView({ article, related }: ArticleDetailViewProps) 
                     alt={rel.title}
                     className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
                   />
-                  <div className="absolute left-3 top-3 rounded-full bg-[#ef5360] px-3 py-0.5 text-[11px] font-semibold text-white shadow-xs">
+                  <div className="absolute left-3 top-3 rounded-full bg-[#ef5360] px-3 py-0.5 text-[11px] font-medium text-white shadow-sm">
                     {rel.category}
                   </div>
                 </div>
@@ -299,12 +300,12 @@ export function ArticleDetailView({ article, related }: ArticleDetailViewProps) 
                       <span>{rel.readMinutes} min read</span>
                     </div>
 
-                    <h3 className="line-clamp-2 text-sm font-bold text-[#2B212B] transition-colors group-hover:text-[#ef5360]">
+                    <h3 className="line-clamp-2 text-sm font-semibold text-[#2B212B] transition-colors group-hover:text-[#ef5360]">
                       {rel.title}
                     </h3>
                   </div>
 
-                  <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-[#ef5360] group-hover:translate-x-1 transition-transform">
+                  <span className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-[#ef5360] group-hover:translate-x-1 transition-transform">
                     <span>Read Story</span>
                     <ArrowRight size={13} />
                   </span>
@@ -315,29 +316,31 @@ export function ArticleDetailView({ article, related }: ArticleDetailViewProps) 
         </section>
       )}
 
-      {/* Organizer Call to Action Banner */}
-      <section className="container max-w-4xl mt-16">
-        <div className="rounded-3xl bg-linear-to-r from-[#2B212B] to-[#402C3E] p-8 sm:p-10 text-white flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
-          <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#ef5360]/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#ff808c] mb-2">
-              <Sparkles size={13} />
-              <span>Are You an Organizer?</span>
+      {/* Organizer Call to Action Banner (only meaningful for organizer accounts) */}
+      <OrganizerOnly>
+        <section className="container max-w-4xl mt-16">
+          <div className="rounded-3xl bg-gradient-to-r from-[#2B212B] to-[#402C3E] p-8 sm:p-10 text-white flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
+            <div>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-[#ef5360]/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#ff808c] mb-2">
+                <Sparkles size={13} />
+                <span>Are You an Organizer?</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight">
+                Publish Your Next Event on TixFlow
+              </h3>
+              <p className="mt-1.5 text-xs sm:text-sm text-gray-300 max-w-lg">
+                Set up ticket tiers, customize seat maps, and launch online registration in minutes with zero setup fees.
+              </p>
             </div>
-            <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight">
-              Publish Your Next Event on TixFlow
-            </h3>
-            <p className="mt-1.5 text-xs sm:text-sm text-gray-300 max-w-lg">
-              Set up ticket tiers, customize seat maps, and launch online registration in minutes with zero setup fees.
-            </p>
+            <Link
+              href="/organizer/events/create"
+              className="inline-flex items-center justify-center rounded-full bg-[#ef5360] px-6 py-3 text-xs font-bold text-white shadow-md hover:bg-[#ec3746] hover:scale-105 active:scale-95 transition-all shrink-0"
+            >
+              Create Event
+            </Link>
           </div>
-          <Link
-            href="/organizer/events/create"
-            className="inline-flex items-center justify-center rounded-full bg-[#ef5360] px-6 py-3 text-xs font-bold text-white shadow-md hover:bg-[#ec3746] hover:scale-105 active:scale-95 transition-all shrink-0"
-          >
-            Create Event
-          </Link>
-        </div>
-      </section>
+        </section>
+      </OrganizerOnly>
     </article>
   );
 }

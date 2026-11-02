@@ -23,6 +23,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useKeycloakAuth } from "@/components/auth-provider";
+import { Skeleton } from "@/components/ui/skeleton";
 import { eventCategories } from "@/lib/mock/events";
 
 interface LanguageOption {
@@ -97,6 +98,11 @@ export function Header() {
     }
   };
 
+  // Blog / Articles magazine index pages render their own standalone Zipevent Blog header
+  if (pathname === "/blog" || pathname === "/articles") {
+    return null;
+  }
+
   return (
     <>
       <header className="site-navbar">
@@ -115,6 +121,7 @@ export function Header() {
 
             {/* Desktop Navigation Links */}
             <nav className="hidden items-center gap-1 md:flex" aria-label="Main navigation">
+              <Link href="/assistant" className="nav-link flex items-center gap-1.5"><Sparkles size={15} />Assistant</Link>
               {/* Events with dropdown */}
               <div className="relative" ref={eventsRef}>
                 <button
@@ -167,10 +174,10 @@ export function Header() {
               </div>
 
               <Link
-                href="/articles"
-                className={`nav-link ${pathname.startsWith("/articles") ? "text-[#ef5360] font-bold" : "text-[#4A4A4A]"}`}
+                href="/blog"
+                className={`nav-link ${pathname.startsWith("/articles") || pathname.startsWith("/blog") ? "text-[#ef5360] font-semibold" : "text-[#4A4A4A]"}`}
               >
-                Articles
+                Blog
               </Link>
 
               <Link
@@ -180,7 +187,7 @@ export function Header() {
                 Store
               </Link>
 
-              {(isOrganizer || (!auth.authenticated && auth.ready)) && (
+              {isOrganizer && (
                 <Link
                   href="/organizer"
                   className={`nav-link ${pathname.startsWith("/organizer") ? "text-[#ef5360] font-bold" : "text-[#4A4A4A]"}`}
@@ -205,7 +212,7 @@ export function Header() {
             {isOrganizer && (
               <Link
                 href="/organizer/events/create"
-                className="container-for-organizer hidden sm:inline-flex"
+                className="container-for-organizer !hidden sm:!inline-flex"
               >
                 <PlusCircle size={15} />
                 <span>Create Event</span>
@@ -260,7 +267,12 @@ export function Header() {
             </div>
 
             {/* User Profile / Log In */}
-            {user ? (
+            {!auth.ready ? (
+              <div className="flex items-center gap-2" role="status" aria-label="Checking session">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="hidden h-8 w-20 rounded-full md:block" />
+              </div>
+            ) : user ? (
               <div className="relative" ref={userRef}>
                 <button
                   type="button"
@@ -355,7 +367,7 @@ export function Header() {
                 </Link>
                 <Link
                   href="/register"
-                  className="btn-event-type hidden md:inline-flex !w-auto !h-8 !px-4 !my-0 !text-xs"
+                  className="btn-event-type !hidden md:!inline-flex !w-auto !h-8 !px-4 !my-0 !text-xs"
                 >
                   Sign up
                 </Link>
@@ -423,6 +435,7 @@ export function Header() {
               </form>
 
               {/* Mobile Navigation Links */}
+              <Link href="/assistant" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-700"><Sparkles size={18} />Assistant</Link>
               <nav className="mt-5 space-y-1">
                 <Link
                   href="/events"
@@ -434,12 +447,12 @@ export function Header() {
                 </Link>
 
                 <Link
-                  href="/articles"
+                  href="/blog"
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-gray-700 hover:bg-[#FFEFF0] hover:text-[#ef5360]"
                 >
                   <FileText size={18} className="text-[#ef5360]" />
-                  <span>Articles &amp; News</span>
+                  <span>Blog &amp; News</span>
                 </Link>
 
                 <Link
@@ -451,7 +464,7 @@ export function Header() {
                   <span>TixStore</span>
                 </Link>
 
-                {(isOrganizer || (!auth.authenticated && auth.ready)) && (
+                {isOrganizer && (
                   <Link
                     href="/organizer"
                     onClick={() => setMenuOpen(false)}
