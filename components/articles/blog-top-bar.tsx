@@ -32,7 +32,7 @@ export function BlogTopBar({ hotArticles = [] }: BlogTopBarProps) {
 
           {activeArticle && (
             <Link
-              href={`/articles/${activeArticle.slug}`}
+              href={`/blog/${activeArticle.slug}`}
               className="truncate text-[12px] font-normal text-white/90 transition-colors hover:text-[#ff858f]"
             >
               {activeArticle.title}

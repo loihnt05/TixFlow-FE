@@ -2,6 +2,7 @@ export interface TicketDto {
   id: string;
   ticketCode: string;
   orderId: string;
+  orderNumber?: string;
   ownerId: string;
   eventSlug: string;
   eventTitle: string;

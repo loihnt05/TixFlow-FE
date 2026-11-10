@@ -1,5 +1,5 @@
-import { AccountView } from "@/components/account/account-view";
+import { AccountProfileSection } from "@/components/account/account-sections";
 
 export default function AccountPage() {
-  return <AccountView section="profile" />;
+  return <AccountProfileSection />;
 }

@@ -41,7 +41,7 @@ export default async function HomePage() {
       <TrendingCarousel events={popularEvents} />
 
       {/* 4. Partner Organizers Section */}
-      <PartnerSection />
+      <PartnerSection events={ticketEvents} />
 
       {/* 5. Register & Tickets — Zipevent 5-Column Portrait Card Grid */}
       <section className="container py-10 sm:py-14">

@@ -77,7 +77,7 @@ export function MainSlider({ articles }: BlogBannerSliderProps) {
                     <div className="banner-washout-veil" />
 
                     <Link
-                      href={`/articles/${article.slug}`}
+                      href={`/blog/${article.slug}`}
                       className={`block w-full ${!isActive ? "pointer-events-none" : ""}`}
                       tabIndex={isActive ? 0 : -1}
                     >

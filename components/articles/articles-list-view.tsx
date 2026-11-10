@@ -19,6 +19,7 @@ import { BlogTopBar } from "./blog-top-bar";
 import { BlogNavHeader } from "./blog-nav-header";
 import { MainSlider } from "./main-slider";
 import { EditorsPicksSection } from "./editors-picks-section";
+import { BlogFooter } from "./blog-footer";
 import {
   getArticles,
   getFeaturedArticles,
@@ -137,7 +138,7 @@ export function ArticlesListView({
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#191919] pb-20">
+    <div className="min-h-screen bg-white text-[#191919]">
       {/* 1. Slim Black 'TRENDING NOW' Ticker Bar */}
       <BlogTopBar hotArticles={heroArticles} />
 
@@ -577,6 +578,11 @@ export function ArticlesListView({
           </aside>
         </div>
       </div>
+
+      {/* 9. Classic Dark 3-Column Magazine Footer */}
+      <div className="mt-20">
+        <BlogFooter />
+      </div>
     </div>
   );
 }
@@ -644,7 +650,7 @@ function ZipeventEditorialCard({
 }) {
   return (
     <article className="flex flex-col justify-between">
-      <Link href={`/articles/${article.slug}`} className="group block">
+      <Link href={`/blog/${article.slug}`} className="group block">
         <div className="relative aspect-[16/10] w-full overflow-hidden bg-gray-100">
           <img
             src={article.coverImage}
@@ -686,7 +692,7 @@ function ZipeventHorizontalCard({ article }: { article: Article }) {
   return (
     <article className="grid grid-cols-1 gap-4 border-b border-gray-100 pb-6 sm:grid-cols-[230px_1fr] sm:gap-6">
       <Link
-        href={`/articles/${article.slug}`}
+        href={`/blog/${article.slug}`}
         className="group relative aspect-[16/10] w-full overflow-hidden bg-gray-100 block"
       >
         <img
@@ -698,7 +704,7 @@ function ZipeventHorizontalCard({ article }: { article: Article }) {
       </Link>
 
       <div className="flex flex-col justify-between">
-        <Link href={`/articles/${article.slug}`} className="group block">
+        <Link href={`/blog/${article.slug}`} className="group block">
           <h3 className="line-clamp-2 text-[15.5px] font-semibold leading-snug text-[#191919] transition-colors group-hover:text-[#ef5360]">
             {article.title}
           </h3>

@@ -79,7 +79,7 @@ export function BlogNavHeader({
                   {editorsPickPreviews.slice(0, 4).map((post) => (
                     <Link
                       key={post.id}
-                      href={`/articles/${post.slug}`}
+                      href={`/blog/${post.slug}`}
                       onClick={() => setOpenMenu(null)}
                       className="group block"
                     >

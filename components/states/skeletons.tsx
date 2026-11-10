@@ -299,6 +299,23 @@ export function ProfileSkeleton() {
   );
 }
 
+/** Inline skeleton rendered inside the `/account` right-hand Outlet panel so Header & Sidebar never flash. */
+export function AccountOutletSkeleton() {
+  return (
+    <Loading label="Loading account section" className="space-y-5">
+      <div className="space-y-2 border-b border-gray-100 pb-4">
+        <Skeleton className="h-6 w-40" />
+        <Skeleton className="h-3.5 w-72 max-w-full" />
+      </div>
+      <div className="space-y-3 pt-2">
+        {Array.from({ length: 3 }, (_, index) => (
+          <Skeleton key={index} className="h-16 w-full rounded-2xl" />
+        ))}
+      </div>
+    </Loading>
+  );
+}
+
 /** Generic fallback used by the root `loading.tsx` for any route without a tailored skeleton. */
 export function PageSkeleton() {
   return (

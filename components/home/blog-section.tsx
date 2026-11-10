@@ -72,7 +72,7 @@ export function BlogSection() {
           {featuredArticle && (
             <div className="lg:col-span-7 flex">
               <Link
-                href={`/articles/${featuredArticle.slug}`}
+                href={`/blog/${featuredArticle.slug}`}
                 className="group relative flex w-full flex-col overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-[0_2px_14px_rgba(17,15,28,0.06)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg"
               >
                 <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden bg-gray-100">
@@ -133,7 +133,7 @@ export function BlogSection() {
             {sideArticles.map((article) => (
               <Link
                 key={article.id}
-                href={`/articles/${article.slug}`}
+                href={`/blog/${article.slug}`}
                 className="group relative flex h-full items-center gap-3.5 sm:gap-4 overflow-hidden rounded-xl border border-gray-200/80 bg-white p-3.5 sm:p-4 shadow-[0_2px_10px_rgba(17,15,28,0.05)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="relative aspect-[4/3] w-28 sm:w-36 shrink-0 overflow-hidden rounded-lg bg-gray-100">

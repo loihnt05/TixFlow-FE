@@ -30,7 +30,7 @@ export default async function BlogSlugPage({ params }: BlogSlugPageProps) {
   const article = getArticleBySlug(slug);
   if (!article) notFound();
 
-  const related = getRelatedArticles(article, 3);
+  const related = getRelatedArticles(article, 6);
 
   return <ArticleDetailView article={article} related={related} />;
 }

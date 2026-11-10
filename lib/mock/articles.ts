@@ -7,11 +7,33 @@ export interface ArticleAuthor {
 }
 
 export type ArticleBlock =
-  | { type: "p"; text: string }
-  | { type: "h2"; text: string }
+  | {
+      type: "p";
+      text: string;
+      align?: "left" | "center";
+      highlightLead?: string;
+    }
+  | { type: "h2"; text: string; align?: "left" | "center" }
   | { type: "list"; items: string[] }
   | { type: "quote"; text: string; cite?: string }
-  | { type: "image"; src: string; caption?: string };
+  | { type: "image"; src: string; caption?: string }
+  | {
+      type: "cta_button";
+      label: string;
+      href: string;
+    }
+  | {
+      type: "event_spot";
+      number: number;
+      title: string;
+      open: string;
+      location: string;
+      moreInfoLabel: string;
+      moreInfoUrl: string;
+      description: string;
+      image?: string;
+      separatorStyle?: "dots" | "line";
+    };
 
 export interface Article {
   id: string;
@@ -62,9 +84,9 @@ export const articles: Article[] = [
   {
     id: "art-1",
     slug: "top-exhibitions-bangkok-2026",
-    title: "What's On in October? 10 Must-See Art Exhibitions & Digital Museums in 2026",
+    title: "What's on in October? 10 Must-See Art Events & Exhibitions in October 2026",
     excerpt:
-      "What's on in October? Check in at 10 curated contemporary galleries, holographic light rooms, and weekend art spaces before they close.",
+      "What's on in October? Check in at 10 curated art exhibitions, open-air park concerts, craft galleries, and contemporary art spaces across the city this month.",
     coverImage: img("photo-1531058020387-3be344556be6"),
     category: "Editors' Picks",
     editorialSection: "Editors' Picks",
@@ -77,41 +99,160 @@ export const articles: Article[] = [
     },
     publishedAt: "2026-10-20",
     readMinutes: 3,
-    tags: ["Exhibition", "Art", "Weekend Guide"],
+    tags: [
+      "Art Event",
+      "Art Space",
+      "Exhibition",
+      "Featured",
+      "Festival",
+      "Gallery",
+      "October",
+      "TixFlow",
+    ],
     body: [
       {
         type: "p",
-        text: "The end of the year is the busiest time for galleries. New shows open almost every weekend, and many of them run for only a few weeks. We picked ten exhibitions that are worth your time, from blockbuster immersive experiences to small independent spaces.",
+        highlightLead: "What's on in October?",
+        text: "Check in at 10 Art Events & Exhibitions in October 2026! In the blink of an eye, we have arrived at the tenth month of the year. If you don't want to spend your weekends staying idle at home, we invite you to stroll through contemporary galleries, immersive installations, and cool autumn art spaces together!",
       },
-      { type: "h2", text: "1. Space & Time Cube+: An Immersive Journey" },
       {
         type: "p",
-        text: "A 2,000 m² digital installation that reacts to your movement. Go on a weekday morning to avoid queues, and book a timed-entry ticket online — walk-ins are often sold out by noon.",
+        text: "This month's lineup is packed as always — we curated solo art exhibitions, park music festivals, craft showcases, and creative markets into 10 must-visit art spots so everyone can pin their weekend route effortlessly. Let's dive right in! ( ¨̮ )",
       },
-      { type: "h2", text: "2. Contemporary Voices of Southeast Asia" },
+      {
+        type: "cta_button",
+        label: "October Event Finder: Match Your Weekend Vibe on TixFlow — Check Now!",
+        href: "/blog/october-weekend-event-horoscope-pick",
+      },
+      {
+        type: "event_spot",
+        number: 1,
+        title: "BEHIND MY EYES",
+        open: "Now – 31 Oct 2026 / 10.00 – 20.00",
+        location: "Photographers' Gallery, 2nd Floor, River City Bangkok",
+        moreInfoLabel: "River City Bangkok",
+        moreInfoUrl: "/events?category=art",
+        description:
+          "BEHIND MY EYES is a solo exhibition by Hiroka Limviphuwat that translates scenes and stories from pure imagination into vibrant paintings. Guided by recurring characters of a young girl and her cat, seemingly unrelated frames gradually connect into an intimate narrative from the artist's inner world. Stop by to see how fleeting thoughts take shape on canvas (⸝⸝´꒳`⸝⸝)",
+        separatorStyle: "dots",
+      },
+      {
+        type: "event_spot",
+        number: 2,
+        title: "The Night by Amazing Season 2: Music in Memory",
+        open: "Now – 27 Oct 2026 / 16.00 – 21.30",
+        location: "Entertainment Pavilion, Lumphini Park",
+        moreInfoLabel: "Amazing Festival Official",
+        moreInfoUrl: "/events?category=music",
+        description:
+          "An ideal evening gathering to bring friends or someone special for a relaxed twilight stroll in the park. Enjoy live acoustic sets from diverse indie artists, interactive light installations, hands-on craft workshops, and artisanal food booths surrounded by lush greenery and music.",
+        image: img("photo-1514525253161-7a46d19cd819", 1024),
+        separatorStyle: "line",
+      },
+      {
+        type: "event_spot",
+        number: 3,
+        title: "Hidden Valley",
+        open: "Now – 31 Oct 2026 / 10.00 – 17.00 (Closed on Sun.)",
+        location: "Mini Xspace, 2nd Floor, Xspace Gallery",
+        moreInfoLabel: "Xspace Gallery",
+        moreInfoUrl: "/events?category=art",
+        description:
+          "Hidden Valley is a solo exhibition by Duayrak Phadungwichian inspired by landscapes and untouched nature encountered along her travels. Dreamlike sceneries inhabited by quirky, endearing creatures reflect the journey of self-discovery — where even uncertain paths slowly bring us closer to a place of warmth and belonging.",
+        separatorStyle: "dots",
+      },
+      {
+        type: "event_spot",
+        number: 4,
+        title: "Soft World",
+        open: "Now – 25 Oct 2026 / 11:00 – 19:00",
+        location: "MMAD GALLERY 4, 2nd Floor, MunMun Srinakarin",
+        moreInfoLabel: "MMAD – MunMun Art Destination",
+        moreInfoUrl: "/events?category=art",
+        description:
+          "Step into a tactile wonderland filled with more than 1,000 fabric dolls and yarn sculptures arranged across the floor and suspended from the ceiling. Created in collaboration with local craft communities using donated yarn, every colourful piece rekindles the childlike joy of exploring a playful, soft-textured universe (˶˃⤙˂˶)",
+        image: img("photo-1513364776144-60967b0f800f", 1024),
+        separatorStyle: "line",
+      },
+      {
+        type: "event_spot",
+        number: 5,
+        title: "Urban / Street / Craft",
+        open: "Now – 25 Oct 2026 / 11:00 – 19:00",
+        location: "MMAD GALLERY 1–4, 2nd Floor, MunMun Srinakarin",
+        moreInfoLabel: "MMAD – MunMun Art Destination",
+        moreInfoUrl: "/events?category=art",
+        description:
+          "Where raw street culture meets intricate handcraft. Urban / Street / Craft reimagines traditional weaving, ceramics, and everyday materials through the lens of contemporary street artists — proving that urban expression goes far beyond spray paint on concrete walls（˶′◡‵˶）",
+        separatorStyle: "dots",
+      },
+      {
+        type: "event_spot",
+        number: 6,
+        title: "The Preservation of Fire",
+        open: "Now – 1 Nov 2026 / 14.00 – 20.00 (Closed on Mon.–Tue.)",
+        location: "Bangkok Kunsthalle",
+        moreInfoLabel: "Bangkok Kunsthalle",
+        moreInfoUrl: "/events?category=art",
+        description:
+          "Experience the heritage of the Akha community through The Preservation of Fire by artist Buseu Ajor, who reconstructed a traditional Akha dwelling from Chiang Rai inside an industrial gallery space. From the sacred kitchen hearth to timber joinery shaped in harmony with nature, the installation preserves ancestral wisdom that is quietly fading over time.",
+        image: img("photo-1460661419201-fd4cecdf8a8b", 1024),
+        separatorStyle: "line",
+      },
+      {
+        type: "event_spot",
+        number: 7,
+        title: "STILL: ON",
+        open: "Now – 15 Nov 2026 / 10.00 – 20.00",
+        location: "RCB Galleria 5, 3rd Floor, River City Bangkok",
+        moreInfoLabel: "River City Bangkok",
+        moreInfoUrl: "/events?category=art",
+        description:
+          "STILL: ON invites visitors to explore the human mind beyond biology — diving into how thoughts, emotions, and memories are shaped by modern urban rhythms, technology, and daily encounters. An introspective exhibition for anyone looking to understand themselves from a fresh perspective.",
+        separatorStyle: "dots",
+      },
+      {
+        type: "event_spot",
+        number: 8,
+        title: "Beyond the Rainbow (พาใจกลับดาว)",
+        open: "Now – 22 Nov 2026 / 11:00 – 20:00",
+        location: "RCB Galleria 1–2, 2nd Floor, River City Bangkok",
+        moreInfoLabel: "River City Bangkok",
+        moreInfoUrl: "/events?category=art",
+        description:
+          "A heartwarming interactive exhibition celebrating the lifelong bond between humans and their beloved pets — from the very first day of meeting to growing up side by side. Through light, sound, and participatory memory walls, pet lovers (and their furry companions!) will leave with full hearts and warm smiles ≽^•⩊•^≼",
+        image: img("photo-1547891654-e66ed7ebb968", 1024),
+        separatorStyle: "line",
+      },
+      {
+        type: "event_spot",
+        number: 9,
+        title: "A Place Within a Place",
+        open: "Now – 25 Oct 2026 / 17.00 – 20.00",
+        location: "L.O.F Gallery",
+        moreInfoLabel: "L.O.F Gallery",
+        moreInfoUrl: "/events?category=art",
+        description:
+          "A Place Within a Place encourages viewers to look at familiar architecture and rooms through a poetic lens — where a single physical corner can awaken entirely different memories, meanings, and nostalgia for each person who stands before it.",
+        separatorStyle: "dots",
+      },
+      {
+        type: "event_spot",
+        number: 10,
+        title: "Giving Life (ชีวิต ชีวา)",
+        open: "Now – 3 May 2027 / 10.00 – 19.00 (Closed on Tue.–Wed.)",
+        location: "Dib Contemporary Art Space",
+        moreInfoLabel: "Dib Contemporary Art",
+        moreInfoUrl: "/events?category=art",
+        description:
+          "The second landmark exhibition at DIB brings together more than 160 works by 33 Thai and international artists. Highlights include kinetic sculptures by Alexander Calder that move gracefully with natural air currents, alongside cross-generational works celebrating how artistic vitality is passed from one era to the next (ദ്ദി˙ᗜ˙)",
+        image: img("photo-1531058020387-3be344556be6", 1024),
+        separatorStyle: "dots",
+      },
       {
         type: "p",
-        text: "Thirty emerging artists from across the region present painting, sculpture and video work. Free guided tours run every Saturday at 2 PM.",
-      },
-      {
-        type: "image",
-        src: img("photo-1460661419201-fd4cecdf8a8b"),
-        caption: "Many galleries now offer timed-entry tickets to manage crowds.",
-      },
-      { type: "h2", text: "Tips for a better gallery day" },
-      {
-        type: "list",
-        items: [
-          "Book timed-entry tickets in advance to skip the line.",
-          "Check whether photography is allowed before you go.",
-          "Combine nearby galleries into a single walking route.",
-          "Follow the venue on TixFlow to get notified about new shows.",
-        ],
-      },
-      {
-        type: "quote",
-        text: "Art is not what you see, but what you make others see.",
-        cite: "Edgar Degas",
+        align: "center",
+        text: "Don't forget to check in at all 10 Art Events & Exhibitions in October 2026 with us! ( ¨̮ )",
       },
     ],
   },
@@ -137,7 +278,51 @@ export const articles: Article[] = [
     body: [
       {
         type: "p",
-        text: "October brings back-to-back arena concerts, intimate vinyl listening sessions, and cross-border indie showcases across Bangkok and Ho Chi Minh City.",
+        highlightLead: "October Concert Update!",
+        text: "October brings back-to-back arena concerts, intimate vinyl listening sessions, and cross-border indie showcases across Bangkok, Ho Chi Minh City, and Hanoi. Bookmark these standout live shows before early-bird tiers sell out!",
+      },
+      {
+        type: "cta_button",
+        label: "Browse All Live Concerts & Music Festivals on TixFlow",
+        href: "/events?category=music",
+      },
+      {
+        type: "event_spot",
+        number: 1,
+        title: "TixFlow Live Arena Showcase 2026",
+        open: "24 Oct 2026 / Doors Open 18.00",
+        location: "Saigon Exhibition & Convention Center (SECC)",
+        moreInfoLabel: "Book Tickets on TixFlow",
+        moreInfoUrl: "/events/tixflow-flash-sale-demo",
+        description:
+          "Our flagship arena production returns with spatial sound design, 360-degree LED visual storytelling, and five headlining regional acts sharing one stage.",
+        image: img("photo-1459749411175-04bf5292ceea", 1024),
+        separatorStyle: "line",
+      },
+      {
+        type: "event_spot",
+        number: 2,
+        title: "Saigon Indie Music Weekend",
+        open: "25–26 Oct 2026 / 15.00 – 23.00",
+        location: "Creative Park Riverside Stage",
+        moreInfoLabel: "Saigon Indie Lineup & Passes",
+        moreInfoUrl: "/events/saigon-indie-music-weekend",
+        description:
+          "Two days of dream-pop, math-rock, and indie folk bands from Vietnam, Thailand, and Indonesia — complete with an analog vinyl market and independent zine fair.",
+        separatorStyle: "dots",
+      },
+      {
+        type: "event_spot",
+        number: 3,
+        title: "Saigon Jazz Under the Stars",
+        open: "30 Oct 2026 / 19.30 – 22.30",
+        location: "Botanical Amphitheatre",
+        moreInfoLabel: "Reserve Seated Passes",
+        moreInfoUrl: "/events/saigon-jazz-under-the-stars",
+        description:
+          "Unwind under open skies as a 12-piece brass ensemble reinterprets classic bossa nova and modern Tokyo jazz-fusion standards.",
+        image: img("photo-1511192336575-5a79af67a629", 1024),
+        separatorStyle: "line",
       },
       { type: "h2", text: "Essential Concert Checklist" },
       {
@@ -146,7 +331,7 @@ export const articles: Article[] = [
           "Save your QR e-ticket offline before arriving at the venue",
           "Bring a compact power bank and cable",
           "Check bag-size restrictions for theatre & arena gates",
-          "Arrive 45 minutes early for merch booths",
+          "Arrive 45 minutes early for official artist merch booths",
         ],
       },
     ],
@@ -996,6 +1181,9 @@ export function getArticles(tab?: ArticleTab): Article[] {
 }
 
 export function getArticleBySlug(slug: string): Article | undefined {
+  if (slug === "10-art-events-in-october-2026") {
+    return articles.find((article) => article.id === "art-1");
+  }
   return articles.find((article) => article.slug === slug);
 }
 
@@ -1027,10 +1215,15 @@ export function getOrganizerArticles(limit = 6): Article[] {
   return getArticles("organizer").slice(0, limit);
 }
 
-export function getRelatedArticles(article: Article, limit = 3): Article[] {
-  return getArticles(article.tab)
-    .filter((candidate) => candidate.slug !== article.slug)
-    .slice(0, limit);
+export function getRelatedArticles(article: Article, limit = 6): Article[] {
+  const all = getArticles().filter((candidate) => candidate.slug !== article.slug);
+  const sameCategory = all.filter(
+    (candidate) =>
+      candidate.category === article.category ||
+      candidate.editorialSection === article.editorialSection
+  );
+  const others = all.filter((candidate) => !sameCategory.includes(candidate));
+  return [...sameCategory, ...others].slice(0, limit);
 }
 
 export function formatArticleDate(iso: string): string {

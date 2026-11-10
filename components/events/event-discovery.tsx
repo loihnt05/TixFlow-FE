@@ -17,6 +17,14 @@ import {
   type Event,
 } from "@/lib/mock/events";
 import { EventCard } from "./event-card";
+import { dateInVietnamIso } from "@/lib/catalog";
+
+function addDaysVietnamIso(isoDate: string, days: number): string {
+  const base = new Date(`${isoDate}T12:00:00Z`);
+  if (Number.isNaN(base.getTime())) return isoDate;
+  base.setUTCDate(base.getUTCDate() + days);
+  return base.toISOString().slice(0, 10);
+}
 
 const PAGE_SIZE = 12; // 3 rows × 4 columns matching zipeventapp.com/event/allevent
 
@@ -114,8 +122,10 @@ export function EventDiscovery({
 
   const filteredEvents = useMemo(() => {
     const q = query.trim().toLowerCase();
-    // Reference date aligned with 2026 event schedule
-    const refDate = new Date("2026-10-14T00:00:00Z");
+    const todayIso = dateInVietnamIso(new Date());
+    const tomorrowIso = addDaysVietnamIso(todayIso, 1);
+    const weekEndIso = addDaysVietnamIso(todayIso, 7);
+    const monthEndIso = addDaysVietnamIso(todayIso, 31);
 
     return events.filter((event) => {
       if (
@@ -163,24 +173,30 @@ export function EventDiscovery({
         if (event.category !== legacyCategoryParam) return false;
       }
 
-      // Date Range filter
+      // Date Range filter aligned with Asia/Ho_Chi_Minh (GMT+7) calendar dates (APP-28)
       if (dateRange !== "all") {
-        const start = new Date(event.startDate);
-        const end = new Date(event.endDate);
-        const dayMs = 86_400_000;
-        const diffStart = (start.getTime() - refDate.getTime()) / dayMs;
-        const isOngoing = start <= refDate && end >= refDate;
+        const eventStartIso = dateInVietnamIso(event.startDate);
+        const eventEndIso = dateInVietnamIso(event.endDate || event.startDate);
 
-        if (dateRange === "today" && !(isOngoing || (diffStart >= 0 && diffStart <= 1.5))) {
+        if (dateRange === "today" && !(eventStartIso <= todayIso && eventEndIso >= todayIso)) {
           return false;
         }
-        if (dateRange === "tomorrow" && !(isOngoing || (diffStart >= 0.5 && diffStart <= 2.5))) {
+        if (
+          dateRange === "tomorrow" &&
+          !(eventStartIso <= tomorrowIso && eventEndIso >= tomorrowIso)
+        ) {
           return false;
         }
-        if (dateRange === "this_week" && !(isOngoing || (diffStart >= 0 && diffStart <= 7))) {
+        if (
+          dateRange === "this_week" &&
+          !(eventStartIso <= weekEndIso && eventEndIso >= todayIso)
+        ) {
           return false;
         }
-        if (dateRange === "this_month" && !(isOngoing || (diffStart >= 0 && diffStart <= 31))) {
+        if (
+          dateRange === "this_month" &&
+          !(eventStartIso <= monthEndIso && eventEndIso >= todayIso)
+        ) {
           return false;
         }
       }

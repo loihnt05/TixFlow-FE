@@ -6,14 +6,18 @@ export interface PublicOrganizerDto {
   slug: string;
   description: string;
   eventCount: number;
+  avatarUrl?: string | null;
+  websiteUrl?: string | null;
+  isVerified?: boolean;
+  followerCount?: number;
 }
 
 export interface PublicVenueDto {
   id: string;
   name: string;
   addressLine: string;
-  ward?: string;
-  district?: string;
+  ward?: string | null;
+  district?: string | null;
   city: string;
   countryCode: string;
   timeZone: string;
@@ -175,6 +179,163 @@ export interface ManagedEvent extends Event {
   sessionIds: string[];
 }
 
+export interface ManagedOrderDto {
+  id: string;
+  orderNumber: string;
+  eventId: string;
+  eventSlug: string;
+  eventTitle: string;
+  eventSessionId: string;
+  sessionName: string;
+  sessionStartsAtUtc: string;
+  buyerUserId: string;
+  buyerName: string;
+  buyerEmail: string;
+  buyerPhone?: string | null;
+  quantity: number;
+  ticketSummary: string;
+  totalAmount: number;
+  currency: string;
+  status: "PendingPayment" | "Paid" | "Cancelled" | "Expired" | "Refunded" | string;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+}
+
+export interface ManagedAttendeeDto {
+  ticketId: string;
+  ticketCode: string;
+  orderId: string;
+  orderNumber: string;
+  orderStatus: string;
+  eventId: string;
+  eventSlug: string;
+  eventTitle: string;
+  eventSessionId: string;
+  sessionName: string;
+  sessionStartsAtUtc: string;
+  sessionEndsAtUtc: string;
+  attendeeUserId: string;
+  attendeeName: string;
+  attendeeEmail: string;
+  attendeePhone?: string | null;
+  ticketTypeName: string;
+  unitPrice: number;
+  currency: string;
+  seatLabel?: string | null;
+  status: "Issued" | "Used" | "Cancelled" | "Refunded" | string;
+  issuedAtUtc: string;
+  checkedInAtUtc?: string | null;
+}
+
+export interface DailySalesPointDto {
+  date: string;
+  label: string;
+  paidRevenue: number;
+  ticketsSold: number;
+  paidOrdersCount: number;
+  cancelledOrdersCount: number;
+}
+
+export interface EventSalesSummaryDto {
+  eventId: string;
+  eventSlug: string;
+  eventTitle: string;
+  status: string;
+  ticketsSold: number;
+  capacity: number;
+  paidRevenue: number;
+  paidOrdersCount: number;
+  cancelledOrdersCount: number;
+  issuedTicketsCount: number;
+  checkedInCount: number;
+}
+
+export interface ManagedAnalyticsDto {
+  timeZone: string;
+  currency: string;
+  days: number;
+  windowStartLocalDate: string;
+  windowEndLocalDate: string;
+  policyNote: string;
+  totalPaidRevenue: number;
+  totalTicketsSold: number;
+  totalPaidOrdersCount: number;
+  totalIssuedTicketsCount: number;
+  totalCheckedInCount: number;
+  pendingOrdersCount: number;
+  cancelledOrdersCount: number;
+  expiredOrdersCount: number;
+  refundedOrdersCount: number;
+  excludedOrdersAmount: number;
+  windowPaidRevenue: number;
+  windowTicketsSold: number;
+  windowPaidOrdersCount: number;
+  dailySeries: DailySalesPointDto[];
+  eventBreakdown: EventSalesSummaryDto[];
+}
+
+export interface ManagedUserDto {
+  id: string;
+  email: string;
+  displayName: string;
+  phoneNumber?: string | null;
+  role: string;
+  status: string;
+  createdAtUtc: string;
+}
+
+export const VIETNAM_TIME_ZONE = "Asia/Ho_Chi_Minh";
+
+export function formatVndCurrency(amount: number, currency = "VND"): string {
+  const safeAmount = Number.isFinite(amount) ? Math.round(amount) : 0;
+  if (currency.trim().toUpperCase() === "VND") {
+    return `${safeAmount.toLocaleString("vi-VN")} ₫`;
+  }
+  return `${safeAmount.toLocaleString("en-US")} ${currency}`;
+}
+
+export function formatVietnamDate(value: string | Date): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: VIETNAM_TIME_ZONE,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
+export function formatVietnamDateTime(value: string | Date): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: VIETNAM_TIME_ZONE,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(date);
+}
+
+export function resolveTicketSaleStatus(
+  availableQuantity: number,
+  saleStart?: string,
+  saleEnd?: string,
+): Event["ticketTypes"][number]["status"] {
+  const now = Date.now();
+  if (saleStart) {
+    const startMs = Date.parse(saleStart);
+    if (!Number.isNaN(startMs) && now < startMs) return "not_started";
+  }
+  if (saleEnd) {
+    const endMs = Date.parse(saleEnd);
+    if (!Number.isNaN(endMs) && now > endMs) return "ended";
+  }
+  return availableQuantity <= 0 ? "sold_out" : "available";
+}
+
 const fallbackImage = "https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1200&q=80";
 
 export function toPublicEvent(item: PublicEventDto): Event {
@@ -182,25 +343,29 @@ export function toPublicEvent(item: PublicEventDto): Event {
   const start = session?.startsAtUtc ?? item.saleStartsAtUtc ?? item.createdAtUtc;
   const end = session?.endsAtUtc ?? start;
   const tickets = session?.ticketTypes ?? [];
-  const mappedTickets: Event["ticketTypes"] = tickets.length > 0 ? tickets.map((ticket) => ({
-    id: ticket.id,
-    eventId: item.id,
-    name: ticket.name,
-    description: ticket.description,
-    price: ticket.price,
-    currency: ticket.currency,
-    quantity: ticket.totalQuantity,
-    sold: ticket.totalQuantity - ticket.availableQuantity,
-    minPerOrder: 1,
-    maxPerOrder: ticket.maxPerOrder,
-    saleStart: ticket.saleStartsAtUtc ?? item.saleStartsAtUtc ?? item.createdAtUtc,
-    saleEnd: ticket.saleEndsAtUtc ?? item.saleEndsAtUtc ?? start,
-    status: (ticket.availableQuantity <= 0 ? "sold_out" : "available") as Event["ticketTypes"][number]["status"],
-    benefits: [],
-    inventoryMode: ticket.inventoryMode,
-    availableQuantity: ticket.availableQuantity,
-    seats: ticket.seats,
-  })) : [{
+  const mappedTickets: Event["ticketTypes"] = tickets.length > 0 ? tickets.map((ticket) => {
+    const saleStart = ticket.saleStartsAtUtc ?? item.saleStartsAtUtc ?? item.createdAtUtc;
+    const saleEnd = ticket.saleEndsAtUtc ?? item.saleEndsAtUtc ?? start;
+    return {
+      id: ticket.id,
+      eventId: item.id,
+      name: ticket.name,
+      description: ticket.description,
+      price: ticket.price,
+      currency: ticket.currency,
+      quantity: ticket.totalQuantity,
+      sold: ticket.totalQuantity - ticket.availableQuantity,
+      minPerOrder: 1,
+      maxPerOrder: ticket.maxPerOrder,
+      saleStart,
+      saleEnd,
+      status: resolveTicketSaleStatus(ticket.availableQuantity, saleStart, saleEnd),
+      benefits: [],
+      inventoryMode: ticket.inventoryMode,
+      availableQuantity: ticket.availableQuantity,
+      seats: ticket.seats,
+    };
+  }) : [{
     id: `${item.id}-pending-inventory`, eventId: item.id, name: "General Admission",
     description: "Ticket inventory will be available soon", price: 0, currency: "VND",
     quantity: 0, sold: 0, minPerOrder: 1, maxPerOrder: 0,
@@ -245,13 +410,13 @@ export function toPublicEvent(item: PublicEventDto): Event {
       id: item.organizer.id,
       name: item.organizer.name,
       slug: item.organizer.slug,
-      avatar: null,
+      avatar: item.organizer.avatarUrl ?? null,
       description: item.organizer.description,
-      website: null,
-      socialLinks: {},
-      verified: false,
+      website: item.organizer.websiteUrl ?? null,
+      socialLinks: item.organizer.websiteUrl ? { website: item.organizer.websiteUrl } : {},
+      verified: Boolean(item.organizer.isVerified),
       eventCount: item.organizer.eventCount,
-      followerCount: 0,
+      followerCount: item.organizer.followerCount ?? 0,
     },
     venue: {
       name: item.venue?.name ?? "Online Event",
@@ -278,19 +443,23 @@ export function toPublicEvent(item: PublicEventDto): Event {
   };
 }
 
-function dateInVietnamIso(value: string): string {
+export function dateInVietnamIso(value: string | Date): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "";
   return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Ho_Chi_Minh",
+    timeZone: VIETNAM_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(new Date(value));
+  }).format(date);
 }
 
-function timeInVietnam(value: string): string {
+export function timeInVietnam(value: string | Date): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "";
   return new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
-  }).format(new Date(value));
+    timeZone: VIETNAM_TIME_ZONE, hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).format(date);
 }
 
 export function toManagedEvent(item: ManagedEventDto): ManagedEvent {
@@ -299,7 +468,7 @@ export function toManagedEvent(item: ManagedEventDto): ManagedEvent {
   const end = session?.endsAtUtc ?? start;
   const status = item.status.toLowerCase() as Event["status"];
   const venue = item.venue;
-  const tickets = session?.ticketTypes ?? [];
+  const tickets = item.sessions.flatMap((s) => s.ticketTypes ?? []);
   return {
     id: item.id,
     slug: item.slug,
@@ -328,21 +497,22 @@ export function toManagedEvent(item: ManagedEventDto): ManagedEvent {
       country: venue?.countryCode ?? "VN",
       latitude: 0,
       longitude: 0,
-      capacity: 0,
+      capacity: tickets.reduce((sum, ticket) => sum + ticket.capacity, 0),
       isOnline: false,
     },
     startDate: start,
     endDate: end,
-    startTime: new Date(start).toISOString().slice(11, 16),
-    endTime: new Date(end).toISOString().slice(11, 16),
-    timezone: venue?.timeZone ?? "Asia/Ho_Chi_Minh",
+    startTime: timeInVietnam(start),
+    endTime: timeInVietnam(end),
+    timezone: venue?.timeZone ?? VIETNAM_TIME_ZONE,
     status,
+    currency: tickets[0]?.currency ?? "VND",
     ticketTypes: tickets.length > 0 ? tickets.map((ticket) => ({
       id: ticket.id, eventId: item.id, name: ticket.name, description: "",
       price: ticket.price, currency: ticket.currency, quantity: ticket.capacity,
       sold: ticket.capacity - ticket.availableQuantity, maxPerOrder: ticket.maxPerOrder,
       saleStart: item.saleStartsAtUtc ?? start, saleEnd: item.saleEndsAtUtc ?? start,
-      status: ticket.availableQuantity <= 0 ? "sold_out" : "available", benefits: [],
+      status: resolveTicketSaleStatus(ticket.availableQuantity, item.saleStartsAtUtc, item.saleEndsAtUtc), benefits: [],
       inventoryMode: ticket.inventoryMode, availableQuantity: ticket.availableQuantity,
     })) : [{
       id: `${item.id}-pending-inventory`, eventId: item.id, name: "General Admission",

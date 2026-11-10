@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -16,13 +16,22 @@ import {
   Calendar,
   MapPin,
   Tag,
+  UserCheck,
 } from "lucide-react";
 import type { Event, TicketType } from "@/lib/mock/events";
 import { useKeycloakAuth } from "@/components/auth-provider";
-import { useApi } from "@/lib/api";
+import { useApi, type CurrentUser } from "@/lib/api";
 import { formatTicketMoney } from "@/components/events/ticketing/format-utils";
 
 type Payment = "card" | "bank" | "wallet";
+
+interface AttendeeInfo {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+type AttendeeField = keyof AttendeeInfo;
 
 interface CheckoutViewProps {
   event: Event;
@@ -68,6 +77,76 @@ export function CheckoutView({
   const [holdReady, setHoldReady] = useState(!existingHoldId);
   const apiRef = useRef(api);
   apiRef.current = api;
+
+  // Attendee information is prefilled from the signed-in account (token first, then /users/me).
+  // Fields the user has edited are never overwritten by a late profile response.
+  const [attendee, setAttendee] = useState<AttendeeInfo>({ name: "", email: "", phone: "" });
+  const editedFields = useRef(new Set<AttendeeField>());
+  const [accountProfile, setAccountProfile] = useState<CurrentUser>();
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [savePhoneToAccount, setSavePhoneToAccount] = useState(true);
+
+  const prefillAttendee = useCallback((values: Partial<AttendeeInfo>) => {
+    setAttendee((current) => {
+      const next = { ...current };
+      (Object.keys(values) as AttendeeField[]).forEach((field) => {
+        const value = values[field]?.trim();
+        if (value && !editedFields.current.has(field)) next[field] = value;
+      });
+      return next;
+    });
+  }, []);
+
+  const updateAttendee = (field: AttendeeField, value: string) => {
+    editedFields.current.add(field);
+    setAttendee((current) => ({ ...current, [field]: value }));
+  };
+
+  const tokenName = String(
+    auth.tokenParsed?.name ?? auth.tokenParsed?.preferred_username ?? ""
+  );
+  const tokenEmail = String(auth.tokenParsed?.email ?? "");
+  const tokenPhone = String(auth.tokenParsed?.phone_number ?? "");
+
+  useEffect(() => {
+    if (!auth.authenticated) return;
+    prefillAttendee({ name: tokenName, email: tokenEmail, phone: tokenPhone });
+  }, [auth.authenticated, prefillAttendee, tokenName, tokenEmail, tokenPhone]);
+
+  useEffect(() => {
+    if (!auth.authenticated) {
+      setAccountProfile(undefined);
+      return;
+    }
+    const controller = new AbortController();
+    setProfileLoading(true);
+    void apiRef
+      .current<CurrentUser>("/api/v1/users/me", controller.signal)
+      .then((profile) => {
+        if (controller.signal.aborted) return;
+        setAccountProfile(profile);
+        prefillAttendee({
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phoneNumber ?? "",
+        });
+      })
+      .catch(() => {
+        // Non-blocking: the token claims already prefilled what they could.
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setProfileLoading(false);
+      });
+    return () => controller.abort();
+  }, [auth.authenticated, auth.tokenParsed?.sub, prefillAttendee]);
+
+  const savedPhone = accountProfile?.phoneNumber?.trim() ?? "";
+  const phoneDiffersFromAccount =
+    Boolean(accountProfile) && attendee.phone.trim() !== "" && attendee.phone.trim() !== savedPhone;
+  const isPrefilledFromAccount =
+    auth.authenticated &&
+    Boolean(attendee.name || attendee.email || attendee.phone) &&
+    editedFields.current.size === 0;
 
   const currency = event.currency ?? ticket.currency ?? "VND";
 
@@ -193,32 +272,25 @@ export function CheckoutView({
       return;
     }
 
-    const formData = new FormData(formEvent.currentTarget);
-    const attendeeName = String(formData.get("name") || "Guest User");
-    const attendeeEmail = String(formData.get("email") || "");
+    const attendeeName = attendee.name.trim() || "Guest User";
+    const attendeeEmail = attendee.email.trim();
+
+    // Remember the phone on the account so future checkouts are prefilled (best effort).
+    if (phoneDiffersFromAccount && savePhoneToAccount) {
+      void api<CurrentUser>("/api/v1/users/me", {
+        method: "PATCH",
+        body: JSON.stringify({ phoneNumber: attendee.phone.trim() }),
+      })
+        .then(setAccountProfile)
+        .catch(() => {
+          // Saving the phone must never block the order.
+        });
+    }
 
     const hasBackendUuid =
       Boolean(sessionId) &&
       /^[0-9a-f-]{36}$/i.test(sessionId ?? "") &&
       /^[0-9a-f-]{36}$/i.test(ticketId);
-
-    // Showcase / Mock Event Demo Completion (when event is seeded showcase without backend UUID)
-    if (!hasBackendUuid && event.id.startsWith("event-")) {
-      const demoOrder = {
-        id: `TF-${Date.now().toString().slice(-8)}`,
-        eventSlug: event.slug,
-        eventTitle: event.title,
-        ticket: cartLines.map((l) => `${l.ticket.name}`).join(", "),
-        quantity: safeQuantity,
-        name: attendeeName,
-        email: attendeeEmail,
-        total: displayedTotal,
-        createdAt: new Date().toISOString(),
-      };
-      localStorage.setItem("tixflow-last-order", JSON.stringify(demoOrder));
-      router.push(`/checkout/success?event=${encodeURIComponent(event.slug)}`);
-      return;
-    }
 
     if (!hasBackendUuid || !sessionId) {
       setCheckoutError(
@@ -258,6 +330,18 @@ export function CheckoutView({
           });
       const hold = holdResult.data;
       setServerTotal(hold.totalAmount);
+      if (hold.expiresAtUtc) {
+        const remaining = Math.max(
+          0,
+          Math.floor((Date.parse(hold.expiresAtUtc) - Date.now()) / 1000)
+        );
+        setTimeLeft(remaining);
+      }
+      if (typeof window !== "undefined" && !existingHoldId) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("holdId", hold.id);
+        window.history.replaceState(null, "", url.toString());
+      }
       const orderKey =
         sessionStorage.getItem(`tixflow-order-key-${hold.id}`) ?? crypto.randomUUID();
       sessionStorage.setItem(`tixflow-order-key-${hold.id}`, orderKey);
@@ -359,50 +443,86 @@ export function CheckoutView({
         {/* Main Checkout Form */}
         <form onSubmit={completeOrder} className="grid gap-8 lg:grid-cols-[1fr_360px]">
           {checkoutError && (
-            <p
+            <div
               role="alert"
-              className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 lg:col-span-2"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 lg:col-span-2"
             >
-              {checkoutError}
-            </p>
+              <span className="flex-1 font-medium">{checkoutError}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setCheckoutError(undefined);
+                  if (existingHoldId) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete("holdId");
+                    window.location.href = url.toString();
+                  }
+                }}
+                className="rounded-lg bg-red-100 px-3 py-1 font-semibold text-red-800 transition hover:bg-red-200"
+              >
+                {existingHoldId ? "Chọn lại vé mới" : "Thử lại"}
+              </button>
+            </div>
           )}
 
           {/* Left Form: Attendee Info & Payment */}
           <div className="space-y-6">
             {/* 1. Attendee Information */}
             <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-2xs sm:p-6">
-              <div className="mb-4 flex items-center gap-2">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#ef5360] text-xs font-bold text-white">
                   1
                 </span>
                 <h2 className="text-base font-bold text-[#2B212B]">
                   Attendee Information
                 </h2>
+                {profileLoading ? (
+                  <span className="ml-auto text-[11px] text-gray-400">
+                    Loading your account details…
+                  </span>
+                ) : isPrefilledFromAccount ? (
+                  <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
+                    <UserCheck size={12} />
+                    Filled from your account
+                  </span>
+                ) : null}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-700">
+                  <label
+                    htmlFor="attendee-name"
+                    className="block text-xs font-semibold text-gray-700"
+                  >
                     Full Name *
                   </label>
                   <input
+                    id="attendee-name"
                     required
                     name="name"
-                    defaultValue="Nguyen Van Minh"
+                    autoComplete="name"
+                    value={attendee.name}
+                    onChange={(e) => updateAttendee("name", e.target.value)}
                     placeholder="Enter attendee full name"
                     className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#2B212B] outline-none transition-colors focus:border-[#ef5360] focus:ring-2 focus:ring-[#ef5360]/20 sm:text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700">
+                  <label
+                    htmlFor="attendee-email"
+                    className="block text-xs font-semibold text-gray-700"
+                  >
                     Email Address *
                   </label>
                   <input
+                    id="attendee-email"
                     required
                     type="email"
                     name="email"
-                    defaultValue="minh.nguyen@example.com"
+                    autoComplete="email"
+                    value={attendee.email}
+                    onChange={(e) => updateAttendee("email", e.target.value)}
                     placeholder="you@example.com"
                     className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#2B212B] outline-none transition-colors focus:border-[#ef5360] focus:ring-2 focus:ring-[#ef5360]/20 sm:text-sm"
                   />
@@ -412,17 +532,38 @@ export function CheckoutView({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700">
+                  <label
+                    htmlFor="attendee-phone"
+                    className="block text-xs font-semibold text-gray-700"
+                  >
                     Phone Number *
                   </label>
                   <input
+                    id="attendee-phone"
                     required
                     type="tel"
                     name="phone"
-                    defaultValue="+84 912 345 678"
+                    autoComplete="tel"
+                    value={attendee.phone}
+                    onChange={(e) => updateAttendee("phone", e.target.value)}
+                    pattern="\+?[0-9 \(\)\.\-]{6,32}"
+                    title="Digits with optional +, spaces, (, ), . or -"
                     placeholder="+84 9xx xxx xxx"
                     className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#2B212B] outline-none transition-colors focus:border-[#ef5360] focus:ring-2 focus:ring-[#ef5360]/20 sm:text-sm"
                   />
+                  {phoneDiffersFromAccount && (
+                    <label className="mt-1.5 flex cursor-pointer items-center gap-1.5 text-[11px] text-gray-500">
+                      <input
+                        type="checkbox"
+                        checked={savePhoneToAccount}
+                        onChange={(e) => setSavePhoneToAccount(e.target.checked)}
+                        className="accent-[#ef5360]"
+                      />
+                      {savedPhone
+                        ? "Update this phone number on my account"
+                        : "Save this phone number to my account"}
+                    </label>
+                  )}
                 </div>
               </div>
             </section>

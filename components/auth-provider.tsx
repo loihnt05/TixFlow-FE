@@ -27,6 +27,7 @@ interface KeycloakAuthContextValue extends AuthSnapshot {
   roles: Role[];
   login(returnTo?: string): Promise<void>;
   register(returnTo?: string): Promise<void>;
+  resetPassword(loginHint?: string, returnTo?: string): Promise<void>;
   logout(): Promise<void>;
   getAccessToken(forceRefresh?: boolean): Promise<string>;
 }
@@ -133,6 +134,16 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
     await keycloak?.register({ redirectUri: config.redirectUri });
   }, []);
 
+  const resetPassword = useCallback(async (loginHint?: string, returnTo = defaultReturnTo) => {
+    const config = keycloakPublicConfig();
+    rememberReturnTo(returnTo);
+    await keycloak?.login({
+      redirectUri: config.redirectUri,
+      loginHint: loginHint?.trim() || undefined,
+      action: "UPDATE_PASSWORD",
+    });
+  }, []);
+
   const logout = useCallback(async () => {
     const config = keycloakPublicConfig();
     await keycloak?.logout({ redirectUri: config.postLogoutRedirectUri });
@@ -151,9 +162,10 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
     roles: rolesOf(snapshot.tokenParsed),
     login,
     register,
+    resetPassword,
     logout,
     getAccessToken,
-  }), [getAccessToken, login, logout, register, snapshot]);
+  }), [getAccessToken, login, logout, register, resetPassword, snapshot]);
 
   // Always render the tree: public pages (and their skeletons) must not wait for Keycloak.
   // Consumers that need a resolved session (ProtectedRoute, header) check `ready` themselves.

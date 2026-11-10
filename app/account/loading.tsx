@@ -1,5 +1,5 @@
-import { ProfileSkeleton } from "@/components/states/skeletons";
+import { AccountOutletSkeleton } from "@/components/states/skeletons";
 
 export default function Loading() {
-  return <ProfileSkeleton />;
+  return <AccountOutletSkeleton />;
 }

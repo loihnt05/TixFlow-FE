@@ -10,6 +10,8 @@ import {
   Calendar,
   MapPin,
   ChevronRight,
+  RotateCw,
+  AlertCircle,
 } from "lucide-react";
 import type { Event } from "@/lib/mock/events";
 import { useApi } from "@/lib/api";
@@ -34,57 +36,88 @@ export function SuccessView({ event, orderId }: { event?: Event; orderId?: strin
   const [orderStatus, setOrderStatus] = useState<string>();
   const [orderTotal, setOrderTotal] = useState<number>();
   const [orderNumber, setOrderNumber] = useState<string>();
+  const [orderCurrency, setOrderCurrency] = useState<string>("VND");
+  const [fetchError, setFetchError] = useState<string>();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchOrderStatus = async (signal?: AbortSignal) => {
+    if (!orderId) return;
+    setRefreshing(true);
+    setFetchError(undefined);
+    try {
+      const result = await api<{ data: { status: string; totalAmount: number; currency: string; orderNumber: string } }>(
+        `/api/v1/orders/${orderId}`, signal,
+      );
+      setOrderStatus(result.data.status);
+      setOrderTotal(result.data.totalAmount);
+      setOrderNumber(result.data.orderNumber);
+      if (result.data.currency) setOrderCurrency(result.data.currency);
+      setFetchError(undefined);
+      return result.data.status;
+    } catch (cause) {
+      if (!signal?.aborted) {
+        setOrderStatus("Unavailable");
+        setFetchError(cause instanceof Error ? cause.message : "Unable to verify order status.");
+      }
+      return undefined;
+    } finally {
+      if (!signal?.aborted) setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     if (orderId) {
       const controller = new AbortController();
       let timer: number | undefined;
-      const refresh = async () => {
-        try {
-          const result = await api<{ data: { status: string; totalAmount: number; currency: string; orderNumber: string } }>(
-            `/api/v1/orders/${orderId}`, controller.signal,
-          );
-          setOrderStatus(result.data.status);
-          setOrderTotal(result.data.totalAmount);
-          setOrderNumber(result.data.orderNumber);
-          if (result.data.status === "PendingPayment") timer = window.setTimeout(refresh, 1200);
-        } catch {
-          if (!controller.signal.aborted) setOrderStatus("Unavailable");
+      const poll = async () => {
+        const status = await fetchOrderStatus(controller.signal);
+        if (status === "PendingPayment" && !controller.signal.aborted) {
+          timer = window.setTimeout(poll, 1500);
         }
       };
-      void refresh();
+      void poll();
       return () => { controller.abort(); if (timer) window.clearTimeout(timer); };
-    }
-    const value =
-      localStorage.getItem("tixflow-last-order") ||
-      localStorage.getItem("zipevent-last-order");
-    if (value) {
-      try {
-        setOrder(JSON.parse(value) as SavedOrder);
-      } catch (e) {
-        console.error(e);
-      }
     }
   }, [api, orderId]);
 
   const eventHref = event ? `/events/${event.slug}` : "/events";
 
+  if (!orderId) {
+    return <main className="container py-20 text-center"><h1 className="text-2xl font-bold">Order ID is missing</h1><p className="mt-3">Open your order history to verify the payment and ticket status.</p><Link href="/account/orders" className="mt-5 inline-block text-[#ef5360]">View orders</Link></main>;
+  }
+
   if (orderId) {
     const paid = orderStatus === "Paid";
+    const failed = orderStatus === "PaymentFailed" || orderStatus === "Cancelled";
+    const unavailable = orderStatus === "Unavailable";
+
     return (
       <main className="min-h-screen bg-[#FDFCFD] px-4 py-16">
         <section className="mx-auto max-w-xl rounded-3xl border border-gray-100 bg-white p-8 text-center shadow-lg">
-          <div className={`mx-auto grid h-16 w-16 place-items-center rounded-full ${paid ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"}`}>
-            {paid ? <Check size={32} /> : <Clock size={28} />}
+          <div className={`mx-auto grid h-16 w-16 place-items-center rounded-full ${
+            paid ? "bg-emerald-50 text-emerald-600" : failed ? "bg-red-50 text-red-600" : unavailable ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
+          }`}>
+            {paid ? <Check size={32} /> : unavailable || failed ? <AlertCircle size={30} /> : <Clock size={28} />}
           </div>
           <h1 className="mt-5 text-2xl font-bold text-[#2B212B]">
-            {paid ? "Payment Successful" : "Confirming Payment"}
+            {paid ? "Payment Successful" : failed ? "Payment Failed" : unavailable ? "Order Verification Delayed" : "Confirming Payment"}
           </h1>
           <p className="mt-2 text-sm text-gray-500">
             {paid
               ? "Your order has been recorded. E-tickets will appear in your account once ticket issuance completes."
+              : failed
+              ? "Payment could not be completed. Please try booking again."
+              : unavailable
+              ? "We are having trouble connecting to verify the order status right now."
               : "Payment status is being updated with the payment provider."}
           </p>
+
+          {fetchError && (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              {fetchError}
+            </div>
+          )}
+
           <div className="mt-6 rounded-xl bg-gray-50 p-4 text-left text-sm">
             <div className="flex justify-between">
               <span className="text-gray-500">Order Number</span>
@@ -93,7 +126,7 @@ export function SuccessView({ event, orderId }: { event?: Event; orderId?: strin
             {orderTotal !== undefined && (
               <div className="mt-2 flex justify-between">
                 <span className="text-gray-500">Total Amount</span>
-                <strong>{money.format(orderTotal)} VND</strong>
+                <strong>{money.format(orderTotal)} {orderCurrency}</strong>
               </div>
             )}
             <div className="mt-2 flex justify-between">
@@ -101,9 +134,23 @@ export function SuccessView({ event, orderId }: { event?: Event; orderId?: strin
               <strong>{orderStatus ?? "Loading…"}</strong>
             </div>
           </div>
-          <Link href="/account/orders" className="mt-6 inline-flex rounded-full bg-[#ef5360] px-6 py-3 text-sm font-bold text-white hover:bg-[#ec3746]">
-            View Order History
-          </Link>
+
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            {unavailable && (
+              <button
+                type="button"
+                onClick={() => void fetchOrderStatus()}
+                disabled={refreshing}
+                className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-5 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50"
+              >
+                <RotateCw size={14} className={refreshing ? "animate-spin" : ""} />
+                {refreshing ? "Checking…" : "Try checking again"}
+              </button>
+            )}
+            <Link href="/account/orders" className="inline-flex rounded-full bg-[#ef5360] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#ec3746]">
+              View Order History
+            </Link>
+          </div>
         </section>
       </main>
     );

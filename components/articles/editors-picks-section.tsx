@@ -45,7 +45,7 @@ export function EditorsPicksSection({
           {/* Left: Large Featured Editor's Pick */}
           {mainPick && (
             <article className="lg:col-span-6">
-              <Link href={`/articles/${mainPick.slug}`} className="group block">
+              <Link href={`/blog/${mainPick.slug}`} className="group block">
                 <div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-100">
                   <img
                     src={mainPick.coverImage}
@@ -84,7 +84,7 @@ export function EditorsPicksSection({
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:col-span-6">
             {sidePicks.map((item) => (
               <article key={item.id}>
-                <Link href={`/articles/${item.slug}`} className="group block">
+                <Link href={`/blog/${item.slug}`} className="group block">
                   <div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-100">
                     <img
                       src={item.coverImage}

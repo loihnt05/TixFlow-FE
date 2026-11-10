@@ -1,5 +1,5 @@
-import { RolePage } from "@/components/role-page";
+import { AdminDashboardView } from "@/components/admin/admin-dashboard-view";
 
 export default function AdminPage() {
-  return <RolePage role="Admin" />;
+  return <AdminDashboardView />;
 }

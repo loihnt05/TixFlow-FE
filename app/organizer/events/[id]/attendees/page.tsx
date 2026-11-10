@@ -1,10 +1,10 @@
-import { notFound } from "next/navigation";
 import { OrganizerView } from "@/components/organizer/organizer-view";
-import { getOrganizerEvents } from "@/lib/mock-api/organizers";
-export default async function EventAttendeesPage({ params }: PageProps<"/organizer/events/[id]/attendees">) {
+
+export default async function EventAttendeesPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
-  const events = await getOrganizerEvents();
-  const event = events.find((item) => item.id === id || item.slug === id);
-  if (!event) notFound();
-  return <OrganizerView section="attendees" eventSlug={event.slug} />;
+  return <OrganizerView section="attendees" eventSlug={id} />;
 }
