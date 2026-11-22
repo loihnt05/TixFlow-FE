@@ -301,7 +301,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     void fetchOrders(controller.signal);
 
     setEventsLoading(true);
-    void getEvents({ limit: 100 })
+    void getEvents({ limit: 1000 })
       .then((result) => {
         if (!controller.signal.aborted) setEvents(result.events);
       })

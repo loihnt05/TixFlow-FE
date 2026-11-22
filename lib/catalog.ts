@@ -1,4 +1,6 @@
 import type { Event, EventCategory } from "@/lib/mock/events";
+import { eventArtwork } from "@/lib/event-artwork";
+import { zipeventWideImages } from "@/lib/zipevent-wide-images";
 
 export interface PublicOrganizerDto {
   id: string;
@@ -399,10 +401,11 @@ export function toPublicEvent(item: PublicEventDto): Event {
     title: item.name,
     description: item.description,
     shortDescription: item.description,
-    coverImage: item.imageUrl ?? fallbackImage,
-    thumbnailImage: item.imageUrl ?? fallbackImage,
+    coverImage: zipeventWideImages[item.slug] || item.imageUrl || eventArtwork(item.name, item.category, "wide"),
+    thumbnailImage: item.imageUrl || eventArtwork(item.name, item.category, "poster"),
     category: item.category.toLowerCase() as EventCategory,
     ticketingMode,
+    ctaLabel: tickets.length === 0 ? "View Event" : undefined,
     currency: mappedTickets[0]?.currency ?? "VND",
     enablePromoCode: ticketingMode === "tiered",
     rounds: hasReservedSeating || item.sessions.length > 1 ? rounds : undefined,

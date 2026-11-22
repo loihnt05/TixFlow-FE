@@ -74,7 +74,7 @@ const categoryTiles: CategoryTile[] = [
     name: "Education",
     nameEn: "Seminars & Talks",
     value: "education",
-    image: "https://images.unsplash.com/photo-1524178871053-8a632f6f5a7b?auto=format&fit=crop&w=600&q=80",
+    image: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=600&q=80",
     eventCount: 19,
   },
   {

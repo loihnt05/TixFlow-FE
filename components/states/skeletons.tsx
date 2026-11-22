@@ -82,12 +82,12 @@ export function HomeSkeleton() {
       <div className="container mt-6">
         <Skeleton className="aspect-[16/7] w-full rounded-2xl" />
       </div>
-      <div className="my-8 bg-gradient-to-r from-[#f6a5b2]/60 via-[#ef5360]/50 to-[#f8a846]/50 py-10">
+      <div className="bg-trending">
         <div className="container">
-          <Skeleton className="mb-5 h-8 w-56 bg-white/50" />
-          <div className="flex gap-5 overflow-hidden">
-            {Array.from({ length: 6 }, (_, index) => (
-              <Skeleton key={index} className="aspect-[3/4] w-[200px] shrink-0 rounded-md bg-white/50 md:w-[220px]" />
+          <Skeleton className="mx-auto mb-6 h-7 w-48 bg-white/50" />
+          <div className="grid grid-cols-5 justify-items-center gap-6 overflow-hidden">
+            {Array.from({ length: 5 }, (_, index) => (
+              <Skeleton key={index} className="aspect-[4/5] w-full max-w-[236.4px] rounded-[4px] bg-white/50" />
             ))}
           </div>
         </div>

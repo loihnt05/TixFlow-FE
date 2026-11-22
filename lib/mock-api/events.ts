@@ -96,12 +96,17 @@ async function loadCombinedCatalog(): Promise<Event[]> {
   const baseUrl = apiBaseUrl();
   if (!baseUrl) throw new BackendUnavailableError("NEXT_PUBLIC_API_URL is not configured.");
 
-  const result = await publicApi<PublicEventPageDto>("/api/v1/events?page=1&limit=100");
-  if (!result || !Array.isArray(result.events)) {
+  const firstPage = await publicApi<PublicEventPageDto>("/api/v1/events?page=1&limit=100");
+  if (!firstPage || !Array.isArray(firstPage.events)) {
     return [];
   }
 
-  return result.events.map(toPublicEvent);
+  const remainingPages = await Promise.all(
+    Array.from({ length: Math.max(0, firstPage.totalPages - 1) }, (_, index) =>
+      publicApi<PublicEventPageDto>(`/api/v1/events?page=${index + 2}&limit=100`),
+    ),
+  );
+  return [firstPage, ...remainingPages].flatMap((page) => page.events.map(toPublicEvent));
 }
 
 export async function getEvents(filters: EventFilters = {}): Promise<PaginatedEvents> {
@@ -127,14 +132,41 @@ export async function getEventBySlug(slug: string): Promise<Event | undefined> {
   }
 }
 
-export async function getFeaturedEvents(): Promise<Event[]> {
-  const catalog = await loadCombinedCatalog();
-  return catalog.slice(0, 8);
-}
+export async function getHomeEvents(limit = 15): Promise<Event[]> {
+  const catalog = (await loadCombinedCatalog()).filter(
+    (event) => event.slug.startsWith("zipevent-reference-")
+      && event.thumbnailImage.startsWith("https://cdnali.zipeventapp.com/images/events/"),
+  );
+  const now = Date.now();
+  const upcoming: Event[] = [];
+  const ongoing: Event[] = [];
+  const past: Event[] = [];
+  for (const event of catalog) {
+    const start = Date.parse(event.startDate);
+    const end = Date.parse(event.endDate);
+    if (start >= now) upcoming.push(event);
+    else if (end >= now) ongoing.push(event);
+    else past.push(event);
+  }
+  upcoming.sort((a, b) => a.startDate.localeCompare(b.startDate));
+  ongoing.sort((a, b) => a.endDate.localeCompare(b.endDate));
+  past.sort((a, b) => b.endDate.localeCompare(a.endDate));
 
-export async function getPopularEvents(): Promise<Event[]> {
-  const catalog = await loadCombinedCatalog();
-  return catalog.slice(0, 10);
+  const ordered = [...upcoming, ...ongoing, ...past];
+  const selected: Event[] = [];
+  const categoryCounts = new Map<string, number>();
+  for (const event of ordered) {
+    if (selected.length >= limit) break;
+    const count = categoryCounts.get(event.category) ?? 0;
+    if (count >= 3) continue;
+    selected.push(event);
+    categoryCounts.set(event.category, count + 1);
+  }
+  if (selected.length < limit) {
+    const selectedIds = new Set(selected.map((event) => event.id));
+    selected.push(...ordered.filter((event) => !selectedIds.has(event.id)).slice(0, limit - selected.length));
+  }
+  return selected;
 }
 
 export async function getRelatedEvents(event: Event, limit = 5): Promise<Event[]> {

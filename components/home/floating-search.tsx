@@ -52,9 +52,9 @@ export function FloatingSearch({ events = [] }: { events?: Event[] }) {
     : [];
 
   return (
-    <div ref={containerRef} className="home-search-container w-full px-4 pt-6 pb-2">
+    <div ref={containerRef} className="home-search-container w-full px-4 pt-6 pb-1">
       <div className="home-search-bar relative">
-        <Search size={20} className="text-[#ef5360] shrink-0 mr-3" />
+        <Search size={19} className="text-[#333333] shrink-0 mr-3" />
         <input
           type="text"
           value={query}
@@ -69,25 +69,18 @@ export function FloatingSearch({ events = [] }: { events?: Event[] }) {
               handleSearchSubmit();
             }
           }}
-          placeholder="Search events, concerts, exhibitions, and venues..."
+          placeholder="Search events"
           aria-label="Search events"
         />
         {query && (
           <button
             type="button"
             onClick={() => setQuery("")}
-            className="p-1 rounded-full text-gray-400 hover:text-gray-600 mr-2"
+            className="p-1 rounded-full text-gray-400 hover:text-gray-600"
           >
             <X size={16} />
           </button>
         )}
-        <button
-          type="button"
-          onClick={() => handleSearchSubmit()}
-          className="h-8 px-4 rounded-full bg-[#ef5360] hover:bg-[#ec3746] text-white text-xs font-bold transition-all shadow-sm shrink-0"
-        >
-          Search
-        </button>
       </div>
 
       {/* Expandable Dropdown */}

@@ -219,7 +219,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* Floating Search Bar matching Zipevent */
 .home-search-container {
   position: relative;
-  max-width: 680px;
+  max-width: 760px;
   margin: 0 auto;
   z-index: 35;
 }
@@ -230,10 +230,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   height: 50px;
   border-radius: 8px;
   background: #ffffff;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  border: 1px solid #e5e7eb;
-  padding: 0 12px 0 16px;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  border: none;
+  padding: 0 14px;
+  transition: box-shadow 0.2s ease;
 }
 
 .home-search-bar:focus-within {
@@ -281,11 +281,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   }
 }
 
-/* Hero Center-Mode Carousel — Precise Zipevent Composition */
+/* Hero Center-Mode Carousel — Precise Zipevent 850px Center + 0.85 Peeking Composition */
 .featured-hero-carousel {
   position: relative;
   width: 100%;
-  padding: 12px 0 24px;
+  padding: 6px 0 10px;
   overflow-x: clip;
 }
 
@@ -300,9 +300,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 
-/* Base slide slot: large slot width creates natural 30-80px whitespace when scaled */
+/* Base slide slot: 850px width matches Zipevent .recommend-event .event-container */
 .featured-hero-carousel .swiper-slide {
-  width: min(54vw, 860px);
+  width: min(88vw, 850px) !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -322,77 +322,34 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 @media (max-width: 1024px) {
   .featured-hero-carousel .swiper-slide {
-    width: min(68vw, 680px);
+    width: min(82vw, 700px) !important;
   }
 }
 
 @media (max-width: 640px) {
   .featured-hero-carousel .swiper-slide {
-    width: 84vw;
-    max-width: 380px;
+    width: 88vw !important;
   }
 }
 
-/* Card inside slide: vertically centered, scaled down to 0.80 when inactive */
-.featured-hero-carousel .featured-event-card {
+.featured-hero-carousel .recommend-slide-card {
   width: 100%;
   transform-origin: center center;
-  transform: scale(0.80);
-  opacity: 0.48;
-  border-radius: 16px;
-  overflow: hidden;
-  background: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: scale(0.85);
+  opacity: 0.5;
   transition:
-    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1);
-  cursor: pointer;
+    transform 320ms ease,
+    opacity 320ms ease;
 }
 
-/* Active card dominates in center */
-.featured-hero-carousel .swiper-slide-active .featured-event-card {
+.featured-hero-carousel .swiper-slide-active .recommend-slide-card {
   transform: scale(1);
   opacity: 1;
-  box-shadow: 0 14px 38px -4px rgba(0, 0, 0, 0.16), 0 4px 16px rgba(0, 0, 0, 0.06);
-  cursor: default;
-}
-
-@media (max-width: 640px) {
-  .featured-hero-carousel .featured-event-card {
-    transform: scale(0.86);
-    opacity: 0.55;
-  }
-  .featured-hero-carousel .swiper-slide-active .featured-event-card {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-/* Washout white veil on inactive cards */
-.featured-event-card .card-washout-veil {
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.45);
-  pointer-events: none;
-  z-index: 20;
-  opacity: 1;
-  transition: opacity 420ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.featured-hero-carousel .swiper-slide-active .featured-event-card .card-washout-veil {
-  opacity: 0;
-}
-
-.recommend-event-wrapper {
-  position: relative;
-  overflow: hidden;
-  border-radius: 12px;
 }
 
 .container-recommend-event {
   position: relative;
-  padding: 24px 0 32px;
+  padding: 8px 0 12px;
 }
 
 .container-recommend-event::before {
@@ -426,7 +383,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   }
 }
 
-/* Trending Section */
+/* Trending Section — Zipevent Authentic Layout & Poster Cards */
 .bg-trending {
   position: relative;
   /* Already full-bleed (direct child of <main>). The previous `100vw` + negative margin
@@ -434,43 +391,80 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   width: 100%;
   max-width: 100%;
   overflow-x: clip;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.2) 0%, white 72%), linear-gradient(to right, #f6a5b2, #ef5360, #f8a846);
-  padding: 48px 0 40px;
-  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 96%, rgba(0, 0, 0, 0) 100%);
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 0%, white 70%),
+    linear-gradient(to right, #e4a2ac, #ec583e, #f4a63f);
+  padding: 60px 0 50px 0;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 98%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 98%, rgba(0, 0, 0, 0) 100%);
 }
 
-.trending-slider {
-  display: flex;
-  gap: 20px;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  padding: 10px 4px 16px;
-}
-
-.trending-slider::-webkit-scrollbar {
-  display: none;
-}
-
-.trending-card-item {
+.trending-section {
+  text-align: center;
   position: relative;
-  flex: 0 0 200px;
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
-  transition: transform 0.24s ease, box-shadow 0.24s ease;
 }
 
-@media (min-width: 768px) {
-  .trending-card-item {
-    flex: 0 0 220px;
-  }
+.container-scroll-trending {
+  position: relative;
+  width: 100%;
 }
 
-.trending-card-item:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+.container-banner-trending {
+  display: grid;
+  justify-items: center;
+  grid-template-columns: repeat(5, minmax(0, 236.4px));
+  gap: 24px;
+  align-items: center;
+  justify-content: center;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 40px, black calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 40px, black calc(100% - 40px), transparent);
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.container-banner-trending.no-fade-left {
+  -webkit-mask-image: linear-gradient(to right, black 0px, black 95%, transparent 100%);
+  mask-image: linear-gradient(to right, black 0px, black 95%, transparent 100%);
+}
+
+.container-banner-trending.no-fade-right {
+  -webkit-mask-image: linear-gradient(to right, transparent 1px, black 10%);
+  mask-image: linear-gradient(to right, transparent 1px, black 10%);
+}
+
+.container-banner-trending.no-fade-left.no-fade-right {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.event-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 236.4px;
+  aspect-ratio: 4 / 5;
+  transition: transform 0.3s ease-in-out;
+}
+
+.event-wrapper:hover {
+  transform: scale(1.03);
+}
+
+.trending-picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.event-card {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: 4px;
+  box-shadow: 2px 3px 8px #00000047;
+  object-fit: cover;
 }
 
 .number-card {
@@ -478,14 +472,97 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   bottom: 0;
   left: 0;
   z-index: 2;
-  font-size: 52px;
-  font-weight: 900;
-  line-height: 1;
-  color: #ffffff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.65), 0 0 12px rgba(239, 83, 96, 0.4);
-  padding: 4px 8px;
-  font-style: italic;
+  width: 45px !important;
+  height: 75px !important;
   pointer-events: none;
+  user-select: none;
+}
+
+.scroll-button {
+  background: rgba(0, 0, 0, 0.5);
+  color: #ffffff;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 3;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.scroll-button:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.scroll-button.left {
+  margin-left: 15px;
+  left: 0;
+}
+
+.scroll-button.right {
+  margin-right: 15px;
+  right: 0;
+}
+
+@media (max-width: 1200px) {
+  .container-banner-trending {
+    gap: 30px;
+    display: flex;
+    align-content: center;
+    align-items: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    height: 350px;
+    justify-content: flex-start;
+    padding: 0 10px 0 5px;
+  }
+
+  .container-banner-trending::-webkit-scrollbar {
+    display: none;
+  }
+
+  .container-scroll-trending {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    position: relative;
+  }
+
+  .scroll-button {
+    display: inline-flex;
+  }
+
+  .container-banner-trending .event-wrapper {
+    width: 226px;
+    max-width: 226px;
+    height: 282.5px;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .container-banner-trending {
+    scroll-snap-type: x mandatory;
+    overflow-x: auto;
+    display: flex;
+    padding: 0 calc(50% - 113px);
+  }
+
+  .container-banner-trending .event-wrapper {
+    scroll-snap-align: center;
+    flex: 0 0 auto;
+  }
 }
 
 /* Event Cards - Zipevent Authentic Portrait 4:5 Style */
@@ -528,8 +605,20 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   transition: transform 0.35s ease;
 }
 
+.event-image-poster--reference {
+  background-color: #f6f4f1;
+}
+
+.event-image-poster--reference img {
+  object-fit: contain;
+}
+
 .event-container:hover .event-image-poster img {
   transform: scale(1.035);
+}
+
+.event-container:hover .event-image-poster--reference img {
+  transform: none;
 }
 
 .event-container .caption {

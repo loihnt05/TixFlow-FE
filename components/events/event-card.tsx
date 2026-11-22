@@ -67,7 +67,7 @@ export function EventCard({
       <div className="event-container group">
         <Link href={`/e/${event.slug}`} className="block">
           {/* Portrait 4:5 Poster Image — Flush to Top & Sides like Zipevent */}
-          <div className="event-image-poster relative">
+          <div className={`event-image-poster relative ${event.slug.startsWith("zipevent-reference-") ? "event-image-poster--reference" : ""}`}>
             <img
               src={imgSrc}
               alt={event.title}

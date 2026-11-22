@@ -11,7 +11,7 @@ interface EventsPageProps {
 }
 
 export default async function EventsPage({ searchParams }: EventsPageProps) {
-  const [params, result] = await Promise.all([searchParams, getEvents({ limit: 100 })]);
+  const [params, result] = await Promise.all([searchParams, getEvents({ limit: 1000 })]);
 
   return (
     <main>
