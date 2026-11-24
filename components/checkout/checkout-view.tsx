@@ -21,6 +21,9 @@ import {
 import type { Event, TicketType } from "@/lib/mock/events";
 import { useKeycloakAuth } from "@/components/auth-provider";
 import { useApi, type CurrentUser } from "@/lib/api";
+import { ApiError } from "@/lib/api";
+import { useWaitingRoom } from "@/lib/waiting-room";
+import { WaitingRoomPanel } from "@/components/checkout/waiting-room-panel";
 import { formatTicketMoney } from "@/components/events/ticketing/format-utils";
 
 type Payment = "card" | "bank" | "wallet";
@@ -75,6 +78,9 @@ export function CheckoutView({
   const [checkoutError, setCheckoutError] = useState<string>();
   const [serverTotal, setServerTotal] = useState<number>();
   const [holdReady, setHoldReady] = useState(!existingHoldId);
+  const [createdHold, setCreatedHold] = useState(false);
+  const [holdAttempted, setHoldAttempted] = useState(false);
+  const waitingRoom = useWaitingRoom(sessionId, !existingHoldId && !createdHold);
   const apiRef = useRef(api);
   apiRef.current = api;
 
@@ -245,6 +251,13 @@ export function CheckoutView({
   const timeFormatted = `${minutes}:${seconds.toString().padStart(2, "0")}`;
 
   const safeQuantity = cartLines.reduce((sum, l) => sum + l.quantity, 0);
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const hasBackendUuid = Boolean(sessionId) && uuidPattern.test(sessionId ?? "") && uuidPattern.test(ticketId);
+  const holdStorageKey = `tixflow-hold-idempotency-${sessionId}-${ticketId}-${safeQuantity}-${seatIds.join("-")}`;
+  const holdAttemptedKey = `${holdStorageKey}-attempted`;
+  useEffect(() => {
+    setHoldAttempted(sessionStorage.getItem(holdAttemptedKey) === "true");
+  }, [holdAttemptedKey]);
   const subtotal = cartLines.reduce(
     (sum, line) => sum + line.ticket.price * line.quantity,
     0
@@ -271,6 +284,17 @@ export function CheckoutView({
       await auth.login(window.location.href);
       return;
     }
+    if (hasBackendUuid && !existingHoldId && !createdHold && !holdAttempted &&
+        !["direct", "admitted"].includes(waitingRoom.phase)) {
+      setCheckoutError("Hãy chờ đến lượt trước khi giữ vé.");
+      return;
+    }
+    if (hasBackendUuid && !existingHoldId && !createdHold && !holdAttempted && waitingRoom.phase === "admitted" &&
+        (!waitingRoom.admissionToken || (waitingRoom.expiresAtUnixMs ?? 0) <= Date.now() + 3000)) {
+      waitingRoom.retry();
+      setCheckoutError("Lượt vừa hết hạn. Đang kiểm tra lại phòng chờ.");
+      return;
+    }
 
     const attendeeName = attendee.name.trim() || "Guest User";
     const attendeeEmail = attendee.email.trim();
@@ -287,11 +311,6 @@ export function CheckoutView({
         });
     }
 
-    const hasBackendUuid =
-      Boolean(sessionId) &&
-      /^[0-9a-f-]{36}$/i.test(sessionId ?? "") &&
-      /^[0-9a-f-]{36}$/i.test(ticketId);
-
     if (!hasBackendUuid || !sessionId) {
       setCheckoutError(
         "Session or ticket ID is missing. Please start checkout from a valid ticket selection."
@@ -302,11 +321,12 @@ export function CheckoutView({
     setSubmitting(true);
     setCheckoutError(undefined);
     try {
-      const holdStorageKey = `tixflow-hold-idempotency-${sessionId}-${ticketId}-${safeQuantity}-${seatIds.join(
-        "-"
-      )}`;
       const holdKey = sessionStorage.getItem(holdStorageKey) ?? crypto.randomUUID();
       sessionStorage.setItem(holdStorageKey, holdKey);
+      if (!existingHoldId) {
+        sessionStorage.setItem(holdAttemptedKey, "true");
+        setHoldAttempted(true);
+      }
       const holdResult = existingHoldId
         ? await api<{
             data: { id: string; version: number; totalAmount: number; expiresAtUtc: string };
@@ -315,7 +335,9 @@ export function CheckoutView({
             data: { id: string; version: number; totalAmount: number; expiresAtUtc: string };
           }>("/api/v1/holds", {
             method: "POST",
-            headers: { "Idempotency-Key": holdKey },
+            headers: { "Idempotency-Key": holdKey,
+              ...(waitingRoom.phase === "admitted" && waitingRoom.admissionToken
+                ? { "X-Admission-Token": waitingRoom.admissionToken } : {}) },
             body: JSON.stringify({
               eventSessionId: sessionId,
               items: [
@@ -329,6 +351,9 @@ export function CheckoutView({
             }),
           });
       const hold = holdResult.data;
+      setCreatedHold(true);
+      setHoldAttempted(false);
+      sessionStorage.removeItem(holdAttemptedKey);
       setServerTotal(hold.totalAmount);
       if (hold.expiresAtUtc) {
         const remaining = Math.max(
@@ -380,6 +405,8 @@ export function CheckoutView({
               current.data.failureReason ?? "Payment was not successful."
             );
           }
+          sessionStorage.removeItem(holdStorageKey);
+          sessionStorage.removeItem(holdAttemptedKey);
           router.push(
             `/checkout/success?event=${encodeURIComponent(event.slug)}&orderId=${order.id}`
           );
@@ -391,6 +418,12 @@ export function CheckoutView({
         `/checkout/success?event=${encodeURIComponent(event.slug)}&orderId=${order.id}`
       );
     } catch (cause) {
+      if (cause instanceof ApiError && ["WAITING_ROOM_REQUIRED", "ADMISSION_INVALID", "ADMISSION_EXPIRED",
+        "ADMISSION_INTENT_CONFLICT"].includes(cause.code ?? "")) {
+        sessionStorage.removeItem(holdAttemptedKey);
+        setHoldAttempted(false);
+        waitingRoom.retry();
+      }
       setCheckoutError(
         cause instanceof Error ? cause.message : "Unable to complete payment."
       );
@@ -432,13 +465,15 @@ export function CheckoutView({
             </p>
           </div>
           <div className="flex items-center gap-2 self-start rounded-full bg-white px-4 py-2 shadow-2xs sm:self-center">
-            <Clock size={16} className="animate-pulse text-[#ef5360]" />
-            <span className="text-xs text-gray-500">Time remaining:</span>
-            <span className="font-mono text-sm font-bold text-[#ef5360]">
-              {timeFormatted} min
-            </span>
+            <Clock size={16} className="text-[#ef5360]" />
+            {existingHoldId || createdHold ? (
+              <><span className="text-xs text-gray-500">Time remaining:</span>
+              <span className="font-mono text-sm font-bold text-[#ef5360]">{timeFormatted} min</span></>
+            ) : <span className="text-xs text-gray-600">Thời gian giữ vé bắt đầu sau khi Hold được tạo.</span>}
           </div>
         </div>
+
+        {!existingHoldId && <WaitingRoomPanel {...waitingRoom} eventHref={`/events/${event.slug}`} />}
 
         {/* Main Checkout Form */}
         <form onSubmit={completeOrder} className="grid gap-8 lg:grid-cols-[1fr_360px]">
@@ -783,7 +818,9 @@ export function CheckoutView({
               <button
                 type="submit"
                 disabled={
-                  submitting || (Boolean(existingHoldId) && (!holdReady || timeLeft <= 0))
+                  submitting || (Boolean(existingHoldId) && (!holdReady || timeLeft <= 0)) ||
+                  (hasBackendUuid && auth.authenticated && !existingHoldId && !createdHold && !holdAttempted &&
+                    !["direct", "admitted"].includes(waitingRoom.phase))
                 }
                 className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#ef5360] py-3.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#ec3746] hover:shadow-lg active:scale-98 sm:text-sm"
               >
@@ -791,6 +828,9 @@ export function CheckoutView({
                 <span>
                   {submitting
                     ? "Processing…"
+                    : hasBackendUuid && auth.authenticated && !existingHoldId && !createdHold && !holdAttempted &&
+                        !["direct", "admitted"].includes(waitingRoom.phase)
+                      ? "Đang chờ lượt giữ vé"
                     : isFreeRegistration
                       ? "Confirm Registration"
                       : `Confirm & Pay · ${formatTicketMoney(displayedTotal, currency, {
