@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { FloatingSearch } from "@/components/home/floating-search";
 import { HeroCarousel } from "@/components/home/hero-carousel";
@@ -14,6 +15,7 @@ import { EventGrid } from "@/components/events/event-grid";
 import { getHomeEvents } from "@/lib/mock-api/events";
 
 export default async function HomePage() {
+  await connection();
   const ticketEvents = await getHomeEvents(15);
   const featuredEvents = ticketEvents.slice(0, 7);
   const popularEvents = ticketEvents.slice(7, 15);
