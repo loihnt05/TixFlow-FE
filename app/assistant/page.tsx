@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useKeycloakAuth } from "@/components/auth-provider";
-import { useApi } from "@/lib/api";
+import { ApiError, useApi } from "@/lib/api";
+import { useWaitingRoom } from "@/lib/waiting-room";
+import { WaitingRoomPanel } from "@/components/checkout/waiting-room-panel";
 import {
   Sparkles,
   Send,
@@ -26,6 +28,7 @@ import {
 } from "lucide-react";
 
 interface Preview {
+  eventId: string;
   eventName: string;
   eventSlug: string;
   sessionName: string;
@@ -139,9 +142,12 @@ function AssistantChat() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [conversationToken, setConversationToken] = useState<string>();
   const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [attemptedConfirmations, setAttemptedConfirmations] = useState<string[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [checkout, setCheckout] = useState<string>();
+  const waitingRoom = useWaitingRoom(activeSessionId, Boolean(activeSessionId) && !checkout);
   const [now, setNow] = useState(Date.now());
   const pending = useRef<AbortController | null>(null);
   const locked = useRef(false);
@@ -168,6 +174,8 @@ function AssistantChat() {
     setBusy(true);
     setError("");
     setProposals([]);
+    setAttemptedConfirmations([]);
+    setActiveSessionId(undefined);
     setMessage("");
 
     const timeLabel = new Date().toLocaleTimeString("vi-VN", {
@@ -195,6 +203,7 @@ function AssistantChat() {
       });
       setConversationToken(reply.conversationToken);
       setProposals(reply.proposals);
+      setActiveSessionId(reply.proposals[0]?.preview.sessionId);
       setTurns((t) => [
         ...t,
         {
@@ -234,12 +243,24 @@ function AssistantChat() {
   }
 
   async function confirm(proposal: Proposal) {
+    if (activeSessionId !== proposal.preview.sessionId) {
+      setActiveSessionId(proposal.preview.sessionId);
+      return;
+    }
+    const alreadyAttempted = attemptedConfirmations.includes(proposal.confirmationToken);
+    if (!alreadyAttempted && (!(["direct", "admitted"].includes(waitingRoom.phase)) ||
+      (waitingRoom.phase === "admitted" && (!waitingRoom.admissionToken ||
+        (waitingRoom.expiresAtUnixMs ?? 0) <= Date.now() + 3000)))) {
+      setError("Hãy chờ đến lượt rồi xác nhận đề xuất còn hiệu lực.");
+      return;
+    }
     if (locked.current) return;
     locked.current = true;
     setBusy(true);
     setError("");
     const controller = new AbortController();
     pending.current = controller;
+    setAttemptedConfirmations((current) => [...current, proposal.confirmationToken]);
     try {
       const result = await api<{ data: { id: string; expiresAtUtc: string } }>(
         "/api/v1/assistant/confirm-hold",
@@ -249,6 +270,7 @@ function AssistantChat() {
           body: JSON.stringify({
             confirmationToken: proposal.confirmationToken,
             confirmed: true,
+            ...(waitingRoom.phase === "admitted" ? { admissionToken: waitingRoom.admissionToken } : {}),
           }),
         }
       );
@@ -276,6 +298,11 @@ function AssistantChat() {
         },
       ]);
     } catch (cause) {
+      if (cause instanceof ApiError && ["WAITING_ROOM_REQUIRED", "ADMISSION_INVALID", "ADMISSION_EXPIRED",
+        "ADMISSION_INTENT_CONFLICT"].includes(cause.code ?? "")) {
+        setAttemptedConfirmations((current) => current.filter((token) => token !== proposal.confirmationToken));
+        waitingRoom.retry();
+      }
       if (!controller.signal.aborted) {
         setError(
           cause instanceof Error
@@ -283,6 +310,27 @@ function AssistantChat() {
             : "Chưa xác nhận được kết quả. Hãy thử lại cùng yêu cầu."
         );
       }
+    } finally {
+      locked.current = false;
+      setBusy(false);
+    }
+  }
+
+  async function refreshProposal(proposal: Proposal) {
+    if (locked.current) return;
+    locked.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      const p = proposal.preview;
+      const fresh = await api<Proposal>("/api/v1/assistant/prepare-hold", {
+        method: "POST",
+        body: JSON.stringify({ eventId: p.eventId, sessionId: p.sessionId,
+          ticketTypeId: p.ticketTypeId, quantity: p.quantity, seatIds: p.seatIds }),
+      });
+      setProposals((current) => current.map((item) => item === proposal ? fresh : item));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không thể làm mới đề xuất.");
     } finally {
       locked.current = false;
       setBusy(false);
@@ -759,9 +807,13 @@ function AssistantChat() {
                 {/* Proposal / Hold Confirmation Boarding-Pass Cards */}
                 {proposals.length > 0 && (
                   <div className="border-t border-rose-100 bg-gradient-to-b from-[#fff5f6] to-white p-5 sm:p-6 space-y-4">
+                    <WaitingRoomPanel {...waitingRoom} />
                     {proposals.map((proposal) => {
                       const p = proposal.preview;
                       const expired = now >= Date.parse(p.confirmBeforeUtc);
+                      const selected = activeSessionId === p.sessionId;
+                      const ready = selected && ["direct", "admitted"].includes(waitingRoom.phase);
+                      const canRetry = attemptedConfirmations.includes(proposal.confirmationToken);
                       const countdown = formatTimeRemaining(p.confirmBeforeUtc, now);
 
                       return (
@@ -852,17 +904,25 @@ function AssistantChat() {
                             <div className="flex flex-wrap items-center gap-3 pt-1">
                               <button
                                 type="button"
-                                disabled={busy || expired}
+                                disabled={busy || (selected && (expired || (!ready && !canRetry)))}
                                 onClick={() => void confirm(proposal)}
                                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[#ef5360] px-6 py-2.5 text-xs sm:text-sm font-bold text-white shadow-[0_6px_18px_rgba(239,83,96,0.3)] transition-all hover:bg-[#ec3746] disabled:opacity-50"
                               >
                                 <CheckCircle2 size={16} />
                                 <span>
-                                  {expired
+                                  {!selected ? "Chọn suất diễn này" : expired
                                     ? "Bản xác nhận đã hết hạn — hãy chọn lại"
-                                    : "Xác nhận giữ vé"}
+                                    : canRetry && !ready ? "Kiểm tra lại kết quả" : ready ? "Xác nhận giữ vé" : "Đang chờ lượt"}
                                 </span>
                               </button>
+
+                              {selected && expired && ready && (
+                                <button type="button" disabled={busy}
+                                  onClick={() => void refreshProposal(proposal)}
+                                  className="rounded-full border border-[#ef5360] bg-white px-5 py-2.5 text-xs font-semibold text-[#ef5360]">
+                                  Làm mới đề xuất
+                                </button>
+                              )}
 
                               <button
                                 type="button"
