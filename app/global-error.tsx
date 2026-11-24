@@ -5,7 +5,7 @@ import "./globals.css";
 /** Last-resort boundary: replaces the root layout, so it must render its own <html>/<body>. */
 export default function GlobalError({ retry }: { error: unknown; retry: () => void }) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body>
         <main className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
           <p className="text-6xl font-black text-[#ef5360]">Oops</p>

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={promptFont.variable}>
+    <html lang="en" data-scroll-behavior="smooth" className={promptFont.variable}>
       <body className={promptFont.className}>
         <AppAuthProvider>
           <Header />
