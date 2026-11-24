@@ -14,6 +14,8 @@ const SLUG_ALIASES: Record<string, string> = {
   "sala-saneha-naza": "naza-documentary-screening",
 };
 
+const PUBLIC_API_TIMEOUT_MS = 15_000;
+
 async function publicApi<T>(path: string): Promise<T> {
   const baseUrl = apiBaseUrl();
   if (!baseUrl) throw new BackendUnavailableError("NEXT_PUBLIC_API_URL is not configured.");
@@ -22,7 +24,7 @@ async function publicApi<T>(path: string): Promise<T> {
     response = await fetch(`${baseUrl}${path}`, {
       headers: { Accept: "application/json" },
       cache: "no-store",
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(PUBLIC_API_TIMEOUT_MS),
     });
   } catch (cause) {
     throw new BackendUnavailableError(cause instanceof Error ? cause.message : "Backend unreachable");
