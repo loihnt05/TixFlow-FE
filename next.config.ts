@@ -1,8 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone"
+  output: "standalone",
+  experimental: {
+    agentUpgrade: "security",
+  },
 };
 
 export default nextConfig;
-
