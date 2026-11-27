@@ -139,24 +139,20 @@ export function OrganizerView({
       setAttendees(attendeeData);
       setAnalytics(analyticsData);
 
-      // Default session for manual check-in
+      // Keep manual check-in scoped to the event currently shown in the workspace.
       const allSessions = eventData.flatMap((ev) =>
         ev.sessions.map((s) => ({ ...s, eventTitle: ev.name, eventSlug: ev.slug })),
       );
-      if (allSessions.length > 0 && !manualSessionId) {
-        const matchingEventSession = effectiveEventFilter
-          ? allSessions.find(
-              (s) =>
-                s.eventSlug.toLowerCase() === effectiveEventFilter.toLowerCase() ||
-                s.eventId.toLowerCase() === effectiveEventFilter.toLowerCase(),
-            )
-          : allSessions[0];
-        if (matchingEventSession) {
-          setManualSessionId(matchingEventSession.id);
-        }
-      }
+      const eligibleSessions = effectiveEventFilter
+        ? allSessions.filter((s) =>
+            s.eventSlug.toLowerCase() === effectiveEventFilter.toLowerCase() ||
+            s.eventId.toLowerCase() === effectiveEventFilter.toLowerCase())
+        : allSessions;
+      setManualSessionId((current) =>
+        eligibleSessions.some((session) => session.id === current)
+          ? current : (eligibleSessions[0]?.id ?? ""));
     },
-    [api, effectiveEventFilter, manualSessionId, rangeDays],
+    [api, effectiveEventFilter, rangeDays],
   );
 
   useEffect(() => {
@@ -270,7 +266,14 @@ export function OrganizerView({
           )} (${VIETNAM_TIME_ZONE}). Đã lưu vào cơ sở dữ liệu.`,
         });
 
-        await loadWorkspaceData();
+        try {
+          await loadWorkspaceData();
+        } catch {
+          setCheckInFeedback({
+            type: "warning",
+            message: "Check-in đã được lưu, nhưng chưa tải lại được danh sách. Hãy bấm làm mới để đối chiếu trạng thái từ cơ sở dữ liệu.",
+          });
+        }
       } catch (cause) {
         if (cause instanceof ApiError) {
           const code = cause.code ?? `HTTP_${cause.status}`;
