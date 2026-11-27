@@ -1,5 +1,5 @@
 import { EventDiscovery } from "@/components/events/event-discovery";
-import { getEvents } from "@/lib/mock-api/events";
+import { getDiscoveryEvents } from "@/lib/mock-api/events";
 
 interface EventsPageProps {
   searchParams: Promise<{
@@ -11,12 +11,12 @@ interface EventsPageProps {
 }
 
 export default async function EventsPage({ searchParams }: EventsPageProps) {
-  const [params, result] = await Promise.all([searchParams, getEvents({ limit: 1000 })]);
+  const [params, events] = await Promise.all([searchParams, getDiscoveryEvents()]);
 
   return (
     <main>
       <EventDiscovery
-        events={result.events}
+        events={events}
         initialQuery={params?.q || ""}
         initialCategory={params?.category || ""}
       />

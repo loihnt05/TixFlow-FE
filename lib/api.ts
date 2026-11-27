@@ -124,7 +124,8 @@ export function useApi() {
       }
 
       const code = problem?.code ?? problem?.title ?? (response.status === 401 ? "UNAUTHORIZED" : undefined);
-      const retryable = problem?.retryable ?? (response.status === 409 && code === "REQUEST_IN_PROGRESS") ?? response.status >= 500;
+      const retryable = problem?.retryable ??
+        ((response.status === 409 && code === "REQUEST_IN_PROGRESS") || response.status >= 500);
 
       throw new ApiError(
         response.status,

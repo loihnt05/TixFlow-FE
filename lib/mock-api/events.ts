@@ -99,9 +99,8 @@ async function loadCombinedCatalog(): Promise<Event[]> {
   if (!baseUrl) throw new BackendUnavailableError("NEXT_PUBLIC_API_URL is not configured.");
 
   const firstPage = await publicApi<PublicEventPageDto>("/api/v1/events?page=1&limit=100");
-  if (!firstPage || !Array.isArray(firstPage.events)) {
-    return [];
-  }
+  if (!firstPage || !Array.isArray(firstPage.events) || !Number.isInteger(firstPage.totalPages)
+    || firstPage.totalPages < 0) throw new Error("Invalid event catalog response.");
 
   const remainingPages = await Promise.all(
     Array.from({ length: Math.max(0, firstPage.totalPages - 1) }, (_, index) =>
@@ -114,6 +113,11 @@ async function loadCombinedCatalog(): Promise<Event[]> {
 export async function getEvents(filters: EventFilters = {}): Promise<PaginatedEvents> {
   const catalog = await loadCombinedCatalog();
   return filterAndPaginate(catalog, filters);
+}
+
+// Discovery applies its interactive filters to the complete public catalog in the browser.
+export async function getDiscoveryEvents(): Promise<Event[]> {
+  return loadCombinedCatalog();
 }
 
 export async function getEventBySlug(slug: string): Promise<Event | undefined> {
