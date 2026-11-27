@@ -316,7 +316,9 @@ export function AdminDashboardView() {
         typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
           ? crypto.randomUUID()
           : `admin-checkin-${Date.now()}`;
-      await api(`/api/v1/check-ins`, {
+      const result = await api<{
+        data: { ticketId: string; checkedInAtUtc: string };
+      }>(`/api/v1/check-ins`, {
         method: "POST",
         headers: { "Idempotency-Key": idempotencyKey },
         body: JSON.stringify({
@@ -326,11 +328,22 @@ export function AdminDashboardView() {
           bypassWindow,
         }),
       });
+      setAttendees((current) => current.map((item) =>
+        item.ticketId === result.data.ticketId
+          ? { ...item, status: "Used", checkedInAtUtc: result.data.checkedInAtUtc }
+          : item));
       setNotice({
         type: "success",
         text: `Đã check-in vé ${attendee.ticketCode} (${attendee.attendeeName}).`,
       });
-      await loadAll();
+      try {
+        await loadAll();
+      } catch {
+        setNotice({
+          type: "success",
+          text: `Đã check-in vé ${attendee.ticketCode}, nhưng chưa tải lại được danh sách. Hãy bấm "Đồng bộ dữ liệu DB" để đối chiếu trạng thái.`,
+        });
+      }
     } catch (cause) {
       if (cause instanceof ApiError && cause.code === "TICKET_ALREADY_USED") {
         setNotice({
