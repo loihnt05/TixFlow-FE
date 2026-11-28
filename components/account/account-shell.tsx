@@ -293,8 +293,9 @@ function AccountShellInner({ children }: { children: React.ReactNode }) {
 }
 
 export function AccountShell({ children }: { children: React.ReactNode }) {
+  const auth = useKeycloakAuth();
   return (
-    <AccountProvider>
+    <AccountProvider key={auth.tokenParsed?.sub ?? ""}>
       <AccountShellInner>{children}</AccountShellInner>
     </AccountProvider>
   );
